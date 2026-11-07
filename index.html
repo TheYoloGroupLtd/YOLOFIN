@@ -19,210 +19,318 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.18/auth0-spa-js.production.js"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
 
-  <!-- Header -->
-  <header class="bg-indigo-600 dark:bg-slate-900 shadow-md border-b border-indigo-700 dark:border-slate-800 transition-colors">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-white/10 p-2 rounded-lg text-white">
-          <i class="fa-solid fa-wallet text-xl"></i>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold tracking-wide text-white">YOLOFIN</h1>
-          <p class="text-xs text-indigo-200 dark:text-slate-400">Expense Tracker & Investment Suite</p>
-        </div>
-      </div>
-      
-      <div class="flex items-center gap-3">
-        <nav class="flex gap-1 bg-indigo-700/60 dark:bg-slate-800 p-1 rounded-lg text-sm">
-          <button id="nav-tracker" onclick="switchView('tracker')" class="px-4 py-2 rounded-md font-medium transition bg-white text-indigo-700 dark:bg-indigo-600 dark:text-white shadow">
-            <i class="fa-solid fa-receipt mr-1"></i> Tracker
-          </button>
-          <button id="nav-calc" onclick="switchView('calculators')" class="px-4 py-2 rounded-md font-medium transition text-indigo-100 hover:text-white dark:text-slate-300 dark:hover:text-white">
-            <i class="fa-solid fa-calculator mr-1"></i> Calculators
-          </button>
-        </nav>
+  <!-- LOADING VIEW -->
+  <div id="view-loading" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-white space-y-4">
+    <div class="inline-flex bg-indigo-600 p-4 rounded-2xl shadow-xl animate-pulse">
+      <i class="fa-solid fa-wallet text-3xl"></i>
+    </div>
+    <p class="text-lg font-semibold tracking-wide">Loading YOLOFIN...</p>
+  </div>
 
-        <!-- Dark/Light Mode Toggle -->
-        <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-indigo-700/60 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 hover:text-white transition" title="Toggle Theme">
-          <i id="theme-icon" class="fa-solid fa-moon"></i>
+  <!-- ERROR VIEW -->
+  <div id="view-error" hidden class="fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4 text-center">
+    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md space-y-4 border border-slate-200 dark:border-slate-800">
+      <i class="fa-solid fa-triangle-exclamation text-rose-500 text-3xl"></i>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white">Authentication Error</h2>
+      <p id="error-message" class="text-sm text-slate-500 dark:text-slate-400"></p>
+      <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-medium text-sm transition">Reload Page</button>
+    </div>
+  </div>
+
+  <!-- UNAUTHENTICATED LOGIN VIEW -->
+  <div id="view-unauthenticated" hidden class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-md p-8 space-y-6 text-center">
+      <div class="inline-flex bg-indigo-600 text-white p-3 rounded-2xl shadow-md">
+        <i class="fa-solid fa-wallet text-2xl"></i>
+      </div>
+      <div class="space-y-1">
+        <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome to YOLOFIN</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Sign in to manage your budget and investment calculators</p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <button onclick="client.loginWithRedirect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold shadow-md transition text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Login
+        </button>
+        <button onclick="client.loginWithRedirect({authorizationParams:{screen_hint:'signup'}})" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white py-3 rounded-xl font-semibold transition text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-user-plus"></i> Create Account (Signup)
         </button>
       </div>
     </div>
-  </header>
+  </div>
 
-  <!-- Main Content Container -->
-  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+  <!-- AUTHENTICATED MAIN APP CONTAINER -->
+  <div id="view-authenticated" hidden class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-indigo-600 dark:bg-slate-900 shadow-md border-b border-indigo-700 dark:border-slate-800 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="bg-white/10 p-2 rounded-lg text-white">
+            <i class="fa-solid fa-wallet text-xl"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-wide text-white">YOLOFIN</h1>
+            <p class="text-xs text-indigo-200 dark:text-slate-400">Expense Tracker & Investment Suite</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <nav class="flex gap-1 bg-indigo-700/60 dark:bg-slate-800 p-1 rounded-lg text-sm">
+            <button id="nav-tracker" onclick="switchView('tracker')" class="px-4 py-2 rounded-md font-medium transition bg-white text-indigo-700 dark:bg-indigo-600 dark:text-white shadow">
+              <i class="fa-solid fa-receipt mr-1"></i> Tracker
+            </button>
+            <button id="nav-calc" onclick="switchView('calculators')" class="px-4 py-2 rounded-md font-medium transition text-indigo-100 hover:text-white dark:text-slate-300 dark:hover:text-white">
+              <i class="fa-solid fa-calculator mr-1"></i> Calculators
+            </button>
+          </nav>
 
-    <!-- VIEW 1: EXPENSE TRACKER -->
-    <section id="view-tracker" class="space-y-6">
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Income</p>
-          <p id="total-income" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">₹0.00</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Expenses</p>
-          <p id="total-expenses" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">₹0.00</p>
-        </div>
-        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Net Balance</p>
-          <p id="net-balance" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">₹0.00</p>
+          <!-- Dark/Light Mode Toggle -->
+          <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-indigo-700/60 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 hover:text-white transition" title="Toggle Theme">
+            <i id="theme-icon" class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- User Profile & Logout -->
+          <div class="flex items-center gap-2 pl-2 border-l border-indigo-500/30 dark:border-slate-700">
+            <span id="user-email" class="text-xs font-semibold text-indigo-100 dark:text-slate-300 hidden sm:inline"></span>
+            <button onclick="client.logout({logoutParams:{returnTo:location.origin}})" class="p-2.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-xs" title="Logout">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
         </div>
       </div>
+    </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Add Transaction Form -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-plus-circle text-indigo-600 dark:text-indigo-400"></i> Add Transaction
-          </h2>
-          <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
-            <input type="hidden" id="tx-id" />
-            
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Type</label>
-              <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-emerald-50 dark:has-[:checked]:bg-emerald-950/40 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-700 dark:has-[:checked]:text-emerald-400">
-                  <input type="radio" name="tx-type" value="income" class="sr-only" checked /> Income
-                </label>
-                <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-rose-50 dark:has-[:checked]:bg-rose-950/40 has-[:checked]:border-rose-500 has-[:checked]:text-rose-700 dark:has-[:checked]:text-rose-400">
-                  <input type="radio" name="tx-type" value="expense" class="sr-only" /> Expense
-                </label>
-              </div>
-            </div>
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
 
-            <div>
-              <label for="tx-desc" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Description</label>
-              <input type="text" id="tx-desc" required placeholder="e.g. Salary, Rent, Grocery" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-            </div>
-
-            <div>
-              <label for="tx-amount" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Amount (₹)</label>
-              <input type="number" id="tx-amount" min="0.01" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-            </div>
-
-            <div>
-              <label for="tx-category" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
-              <select id="tx-category" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 dark:text-white">
-                <option value="Salary">Salary</option>
-                <option value="Investment">Investment</option>
-                <option value="Housing">Housing & Rent</option>
-                <option value="Food">Groceries & Food</option>
-                <option value="Utilities">Utilities & Bills</option>
-                <option value="Transport">Transport & Fuel</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="tx-date" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Date</label>
-              <input type="date" id="tx-date" required class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-            </div>
-
-            <div class="flex gap-2">
-              <button type="submit" id="btn-save" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition text-sm">Save Transaction</button>
-              <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-300 dark:hover:bg-slate-700">Cancel</button>
-            </div>
-          </form>
+      <!-- VIEW 1: EXPENSE TRACKER -->
+      <section id="content-tracker" class="space-y-6">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Income</p>
+            <p id="total-income" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">₹0.00</p>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Expenses</p>
+            <p id="total-expenses" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">₹0.00</p>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Net Balance</p>
+            <p id="net-balance" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">₹0.00</p>
+          </div>
         </div>
 
-        <!-- Transactions List & Charts -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Expense Breakdown</h2>
-            <div class="h-64 flex justify-center items-center">
-              <canvas id="expense-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-              <h2 class="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Add Transaction Form -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
+            <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-plus-circle text-indigo-600 dark:text-indigo-400"></i> Add Transaction
+            </h2>
+            <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+              <input type="hidden" id="tx-id" />
+              
               <div>
-                <select id="filter-category" onchange="renderTracker()" class="text-xs px-3 py-2 border dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 dark:text-white">
-                  <option value="ALL">All Categories</option>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Type</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-emerald-50 dark:has-[:checked]:bg-emerald-950/40 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-700 dark:has-[:checked]:text-emerald-400">
+                    <input type="radio" name="tx-type" value="income" class="sr-only" checked /> Income
+                  </label>
+                  <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-rose-50 dark:has-[:checked]:bg-rose-950/40 has-[:checked]:border-rose-500 has-[:checked]:text-rose-700 dark:has-[:checked]:text-rose-400">
+                    <input type="radio" name="tx-type" value="expense" class="sr-only" /> Expense
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label for="tx-desc" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Description</label>
+                <input type="text" id="tx-desc" required placeholder="e.g. Salary, Rent, Grocery" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+              </div>
+
+              <div>
+                <label for="tx-amount" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Amount (₹)</label>
+                <input type="number" id="tx-amount" min="0.01" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+              </div>
+
+              <div>
+                <label for="tx-category" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                <select id="tx-category" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 dark:text-white">
                   <option value="Salary">Salary</option>
                   <option value="Investment">Investment</option>
-                  <option value="Housing">Housing</option>
-                  <option value="Food">Food</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Transport">Transport</option>
+                  <option value="Housing">Housing & Rent</option>
+                  <option value="Food">Groceries & Food</option>
+                  <option value="Utilities">Utilities & Bills</option>
+                  <option value="Transport">Transport & Fuel</option>
                   <option value="Entertainment">Entertainment</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+              <div>
+                <label for="tx-date" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Date</label>
+                <input type="date" id="tx-date" required class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+              </div>
+
+              <div class="flex gap-2">
+                <button type="submit" id="btn-save" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition text-sm">Save Transaction</button>
+                <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-300 dark:hover:bg-slate-700">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Transactions List & Charts -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Expense Breakdown</h2>
+              <div class="h-64 flex justify-center items-center">
+                <canvas id="expense-chart"></canvas>
+              </div>
             </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr class="border-b dark:border-slate-800 text-slate-400 font-semibold text-xs">
-                    <th class="py-2">Date</th>
-                    <th class="py-2">Description</th>
-                    <th class="py-2">Category</th>
-                    <th class="py-2 text-right">Amount</th>
-                    <th class="py-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
-                  <!-- Dynamic rows -->
-                </tbody>
-              </table>
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</h2>
+                <div>
+                  <select id="filter-category" onchange="renderTracker()" class="text-xs px-3 py-2 border dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 dark:text-white">
+                    <option value="ALL">All Categories</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Investment">Investment</option>
+                    <option value="Housing">Housing</option>
+                    <option value="Food">Food</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr class="border-b dark:border-slate-800 text-slate-400 font-semibold text-xs">
+                      <th class="py-2">Date</th>
+                      <th class="py-2">Description</th>
+                      <th class="py-2">Category</th>
+                      <th class="py-2 text-right">Amount</th>
+                      <th class="py-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- Dynamic rows -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- VIEW 2: CALCULATORS -->
-    <section id="view-calculators" class="hidden space-y-6">
-      <!-- Sub-Tabs -->
-      <div class="flex overflow-x-auto gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <button onclick="setCalcTab('sip')" class="calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">SIP Calculator</button>
-        <button onclick="setCalcTab('lumpsum')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Lumpsum Calculator</button>
-        <button onclick="setCalcTab('swp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">SWP Calculator</button>
-        <button onclick="setCalcTab('stp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">STP Calculator</button>
-        <button onclick="setCalcTab('stepup')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Step-Up SIP</button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Controls Panel -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs">
-          <!-- Dynamic Controls -->
+      <!-- VIEW 2: CALCULATORS -->
+      <section id="content-calculators" class="hidden space-y-6">
+        <!-- Sub-Tabs -->
+        <div class="flex overflow-x-auto gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+          <button onclick="setCalcTab('sip')" class="calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">SIP Calculator</button>
+          <button onclick="setCalcTab('lumpsum')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Lumpsum Calculator</button>
+          <button onclick="setCalcTab('swp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">SWP Calculator</button>
+          <button onclick="setCalcTab('stp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">STP Calculator</button>
+          <button onclick="setCalcTab('stepup')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Step-Up SIP</button>
         </div>
 
-        <!-- Output & Chart Panel -->
-        <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-              <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-1">Invested Amount</p>
-              <p class="text-xl font-bold text-slate-800 dark:text-white mt-1" id="res-val-1">₹0</p>
-            </div>
-            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-              <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-2">Est. Returns</p>
-              <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1" id="res-val-2">₹0</p>
-            </div>
-            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-              <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-3">Total Future Value</p>
-              <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="res-val-3">₹0</p>
-            </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Controls Panel -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs">
+            <!-- Dynamic Controls -->
           </div>
 
-          <div class="h-64 w-full flex justify-center items-center">
-            <canvas id="calc-chart"></canvas>
+          <!-- Output & Chart Panel -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-1">Invested Amount</p>
+                <p class="text-xl font-bold text-slate-800 dark:text-white mt-1" id="res-val-1">₹0</p>
+              </div>
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-2">Est. Returns</p>
+                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1" id="res-val-2">₹0</p>
+              </div>
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-3">Total Future Value</p>
+                <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="res-val-3">₹0</p>
+              </div>
+            </div>
+
+            <div class="h-64 w-full flex justify-center items-center">
+              <canvas id="calc-chart"></canvas>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-  </main>
+    </main>
+  </div>
 
   <script>
+    // --- AUTH0 INITIALIZATION & VIEW HELPERS ---
+    const displayView = name => ['loading', 'error', 'authenticated', 'unauthenticated'].forEach(v => document.getElementById(`view-${v}`).hidden = v !== name);
+    const setTextContent = (id, content) => document.getElementById(id).textContent = content;
+
+    let expenseChartInstance = null;
+    let calcChartInstance = null;
+    let activeCalc = 'sip';
+    let transactions = JSON.parse(localStorage.getItem('yolofin_transactions')) || [
+      { id: '1', type: 'income', desc: 'Monthly Salary', amount: 85000, category: 'Salary', date: '2026-11-01' },
+      { id: '2', type: 'expense', desc: 'House Rent', amount: 25000, category: 'Housing', date: '2026-11-02' },
+      { id: '3', type: 'expense', desc: 'Groceries & Supplies', amount: 8500, category: 'Food', date: '2026-11-04' }
+    ];
+
+    document.getElementById('tx-date').valueAsDate = new Date();
+
+    (async () => {
+      try {
+        // Initialize the Auth0 SDK with your exact credentials
+        window.client = await auth0.createAuth0Client({
+          domain: 'dev-nn2qu57j7lpwloud.us.auth0.com',
+          clientId: 'FbFR0Gpnt3YpvhctaaaXLnEWFJCleJWc',
+          authorizationParams: { redirect_uri: location.origin },
+        });
+
+        // Handle errors returned by Auth0 after a redirect
+        if (location.search.includes("error=")) {
+          const params = new URLSearchParams(location.search);
+          setTextContent("error-message", `Error: ${params.get("error")} — ${params.get("error_description")}`);
+          displayView("error");
+          history.replaceState({}, "", location.pathname);
+          return;
+        }
+
+        // Handle the redirect callback after a successful login
+        if (location.search.includes("code=") && location.search.includes("state=")) {
+          await window.client.handleRedirectCallback();
+          history.replaceState({}, "", location.pathname);
+        }
+
+        if (await window.client.isAuthenticated()) {
+          const user = await window.client.getUser();
+          setTextContent("user-email", user.email || user.name);
+          displayView("authenticated");
+          renderTracker();
+          return;
+        }
+
+        displayView("unauthenticated");
+      } catch (err) {
+        console.error(err);
+        setTextContent("error-message", err.message);
+        displayView("error");
+      }
+    })();
+
     // --- DARK MODE LOGIC ---
     function toggleDarkMode() {
       const html = document.documentElement;
@@ -237,7 +345,7 @@
         icon.className = "fa-solid fa-sun";
       }
       renderTracker();
-      if (!document.getElementById('view-calculators').classList.contains('hidden')) calculateResults();
+      if (!document.getElementById('content-calculators').classList.contains('hidden')) calculateResults();
     }
 
     if (localStorage.getItem('theme') === 'dark') {
@@ -245,23 +353,10 @@
       document.getElementById('theme-icon').className = "fa-solid fa-sun";
     }
 
-    // --- STATE MANAGEMENT ---
-    let transactions = JSON.parse(localStorage.getItem('yolofin_transactions')) || [
-      { id: '1', type: 'income', desc: 'Monthly Salary', amount: 85000, category: 'Salary', date: '2026-11-01' },
-      { id: '2', type: 'expense', desc: 'House Rent', amount: 25000, category: 'Housing', date: '2026-11-02' },
-      { id: '3', type: 'expense', desc: 'Groceries & Supplies', amount: 8500, category: 'Food', date: '2026-11-04' }
-    ];
-
-    let expenseChartInstance = null;
-    let calcChartInstance = null;
-    let activeCalc = 'sip';
-
-    document.getElementById('tx-date').valueAsDate = new Date();
-
     // --- NAVIGATION ---
     function switchView(view) {
-      document.getElementById('view-tracker').classList.toggle('hidden', view !== 'tracker');
-      document.getElementById('view-calculators').classList.toggle('hidden', view !== 'calculators');
+      document.getElementById('content-tracker').classList.toggle('hidden', view !== 'tracker');
+      document.getElementById('content-calculators').classList.toggle('hidden', view !== 'calculators');
       
       const trackerBtn = document.getElementById('nav-tracker');
       const calcBtn = document.getElementById('nav-calc');
@@ -576,8 +671,6 @@
         }
       });
     }
-
-    renderTracker();
   </script>
 </body>
 </html>
