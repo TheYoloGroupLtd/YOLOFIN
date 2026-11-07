@@ -38,7 +38,7 @@
       <i class="fa-solid fa-triangle-exclamation text-rose-500 text-3xl"></i>
       <h2 class="text-xl font-bold text-slate-900 dark:text-white">Authentication Error</h2>
       <p id="error-message" class="text-sm text-slate-500 dark:text-slate-400"></p>
-      <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-medium text-sm transition">Reload Page</button>
+      <button onclick="location.href = window.location.origin + window.location.pathname;" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-medium text-sm transition">Reload Page</button>
     </div>
   </div>
 
@@ -54,10 +54,10 @@
       </div>
 
       <div class="space-y-3 pt-2">
-        <button onclick="window.client.loginWithRedirect({ authorizationParams: { redirect_uri: window.location.origin + window.location.pathname } })" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold shadow-md transition text-sm flex items-center justify-center gap-2">
+        <button onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold shadow-md transition text-sm flex items-center justify-center gap-2">
           <i class="fa-solid fa-right-to-bracket"></i> Login
         </button>
-        <button onclick="window.client.loginWithRedirect({ authorizationParams: { screen_hint: 'signup', redirect_uri: window.location.origin + window.location.pathname } })" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white py-3 rounded-xl font-semibold transition text-sm flex items-center justify-center gap-2">
+        <button onclick="signup()" class="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white py-3 rounded-xl font-semibold transition text-sm flex items-center justify-center gap-2">
           <i class="fa-solid fa-user-plus"></i> Create Account (Signup)
         </button>
       </div>
@@ -66,7 +66,6 @@
 
   <!-- AUTHENTICATED MAIN APP CONTAINER -->
   <div id="view-authenticated" hidden class="flex flex-col min-h-screen">
-    <!-- Header -->
     <header class="bg-indigo-600 dark:bg-slate-900 shadow-md border-b border-indigo-700 dark:border-slate-800 transition-colors">
       <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center gap-3">
@@ -89,15 +88,13 @@
             </button>
           </nav>
 
-          <!-- Dark/Light Mode Toggle -->
           <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-indigo-700/60 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 hover:text-white transition" title="Toggle Theme">
             <i id="theme-icon" class="fa-solid fa-moon"></i>
           </button>
 
-          <!-- User Profile & Logout -->
           <div class="flex items-center gap-2 pl-2 border-l border-indigo-500/30 dark:border-slate-700">
             <span id="user-email" class="text-xs font-semibold text-indigo-100 dark:text-slate-300 hidden sm:inline"></span>
-            <button onclick="window.client.logout({ logoutParams: { returnTo: window.location.origin + window.location.pathname } })" class="p-2.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-xs" title="Logout">
+            <button onclick="logout()" class="p-2.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-xs" title="Logout">
               <i class="fa-solid fa-right-from-bracket"></i>
             </button>
           </div>
@@ -105,12 +102,8 @@
       </div>
     </header>
 
-    <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-
-      <!-- VIEW 1: EXPENSE TRACKER -->
       <section id="content-tracker" class="space-y-6">
-        <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Income</p>
@@ -127,7 +120,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Add Transaction Form -->
           <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
             <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
               <i class="fa-solid fa-plus-circle text-indigo-600 dark:text-indigo-400"></i> Add Transaction
@@ -183,7 +175,6 @@
             </form>
           </div>
 
-          <!-- Transactions List & Charts -->
           <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
               <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Expense Breakdown</h2>
@@ -221,9 +212,7 @@
                       <th class="py-2 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <!-- Dynamic rows -->
-                  </tbody>
+                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                 </table>
               </div>
             </div>
@@ -231,9 +220,7 @@
         </div>
       </section>
 
-      <!-- VIEW 2: CALCULATORS -->
       <section id="content-calculators" class="hidden space-y-6">
-        <!-- Sub-Tabs -->
         <div class="flex overflow-x-auto gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
           <button onclick="setCalcTab('sip')" class="calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">SIP Calculator</button>
           <button onclick="setCalcTab('lumpsum')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Lumpsum Calculator</button>
@@ -243,12 +230,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Controls Panel -->
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs">
-            <!-- Dynamic Controls -->
-          </div>
-
-          <!-- Output & Chart Panel -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs"></div>
           <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
@@ -264,19 +246,16 @@
                 <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="res-val-3">₹0</p>
               </div>
             </div>
-
             <div class="h-64 w-full flex justify-center items-center">
               <canvas id="calc-chart"></canvas>
             </div>
           </div>
         </div>
       </section>
-
     </main>
   </div>
 
   <script>
-    // --- AUTH0 INITIALIZATION & VIEW HELPERS ---
     const displayView = name => ['loading', 'error', 'authenticated', 'unauthenticated'].forEach(v => document.getElementById(`view-${v}`).hidden = v !== name);
     const setTextContent = (id, content) => document.getElementById(id).textContent = content;
 
@@ -291,20 +270,27 @@
 
     document.getElementById('tx-date').valueAsDate = new Date();
 
+    // Clean base URI calculation (guarantees matching format)
+    const getBaseUri = () => {
+      let base = window.location.origin + window.location.pathname;
+      if (base.endsWith('/')) base = base.slice(0, -1);
+      return base;
+    };
+
+    let authClient = null;
+
     (async () => {
       try {
-        const redirectUri = window.location.origin + window.location.pathname;
+        const cleanUri = getBaseUri();
 
-        // Initialize the Auth0 SDK with exact credentials and dynamic redirect path
-        window.client = await auth0.createAuth0Client({
+        authClient = await auth0.createAuth0Client({
           domain: 'dev-nn2qu57j7lpwloud.us.auth0.com',
           clientId: 'FbFR0Gpnt3YpvhctaaaXLnEWFJCleJWc',
           authorizationParams: { 
-            redirect_uri: redirectUri 
-          },
+            redirect_uri: cleanUri 
+          }
         });
 
-        // Handle errors returned by Auth0 after a redirect
         if (location.search.includes("error=")) {
           const params = new URLSearchParams(location.search);
           setTextContent("error-message", `Error: ${params.get("error")} — ${params.get("error_description")}`);
@@ -313,14 +299,13 @@
           return;
         }
 
-        // Handle the redirect callback after a successful login
         if (location.search.includes("code=") && location.search.includes("state=")) {
-          await window.client.handleRedirectCallback();
+          await authClient.handleRedirectCallback();
           history.replaceState({}, "", location.pathname);
         }
 
-        if (await window.client.isAuthenticated()) {
-          const user = await window.client.getUser();
+        if (await authClient.isAuthenticated()) {
+          const user = await authClient.getUser();
           setTextContent("user-email", user.email || user.name);
           displayView("authenticated");
           renderTracker();
@@ -334,6 +319,24 @@
         displayView("error");
       }
     })();
+
+    async function login() {
+      await authClient.loginWithRedirect({
+        authorizationParams: { redirect_uri: getBaseUri() }
+      });
+    }
+
+    async function signup() {
+      await authClient.loginWithRedirect({
+        authorizationParams: { screen_hint: 'signup', redirect_uri: getBaseUri() }
+      });
+    }
+
+    async function logout() {
+      await authClient.logout({
+        logoutParams: { returnTo: getBaseUri() }
+      });
+    }
 
     // --- DARK MODE LOGIC ---
     function toggleDarkMode() {
@@ -447,7 +450,6 @@
       document.getElementById('total-expenses').innerText = `₹${expense.toLocaleString('en-IN')}`;
       document.getElementById('net-balance').innerText = `₹${(income - expense).toLocaleString('en-IN')}`;
 
-      // Table Render
       const tbody = document.getElementById('tx-table-body');
       tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="5" class="text-center py-4 text-slate-400">No transactions recorded</td></tr>';
       
@@ -469,7 +471,6 @@
         tbody.appendChild(tr);
       });
 
-      // Chart Render
       const isDark = document.documentElement.classList.contains('dark');
       const ctx = document.getElementById('expense-chart').getContext('2d');
       if (expenseChartInstance) expenseChartInstance.destroy();
@@ -651,7 +652,6 @@
       document.getElementById('res-val-2').innerText = `₹${Math.round(returns).toLocaleString('en-IN')}`;
       document.getElementById('res-val-3').innerText = `₹${Math.round(activeCalc === 'swp' ? (total - returns) : total).toLocaleString('en-IN')}`;
 
-      // Update Pie Chart
       const isDark = document.documentElement.classList.contains('dark');
       const ctx = document.getElementById('calc-chart').getContext('2d');
       if (calcChartInstance) calcChartInstance.destroy();
