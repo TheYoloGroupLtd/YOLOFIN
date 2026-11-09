@@ -46,64 +46,39 @@
   <!-- AUTHENTICATION MODAL -->
   <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
     <div class="glass-card w-full max-w-md p-8 rounded-2xl border border-purple-500/30 shadow-2xl relative">
-      
-      <!-- VIEW 1: SIGN IN / SIGN UP -->
-      <div id="auth-view-main">
-        <div class="text-center mb-6">
-          <h2 id="auth-title" class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Welcome to YOLOFIN</h2>
-          <p id="auth-subtitle" class="text-slate-400 text-sm mt-1">Sign in to sync your budget with Supabase</p>
-        </div>
-
-        <div id="auth-error" class="hidden mb-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-200 text-xs text-center"></div>
-
-        <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs text-purple-300 font-medium mb-1">Email Address</label>
-            <input type="email" id="auth-email" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="name@domain.com">
-          </div>
-          <div>
-            <label class="block text-xs text-purple-300 font-medium mb-1">Password</label>
-            <input type="password" id="auth-password" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••">
-          </div>
-
-          <button type="submit" id="auth-btn" class="w-full py-3 mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/40 transition duration-200">
-            Sign In
-          </button>
-        </form>
-
-        <div class="mt-6 text-center space-y-2">
-          <button onclick="handleForgotPassword()" class="text-xs text-purple-400 hover:text-purple-300 underline block w-full text-center">
-            Forgot Password?
-          </button>
-          <p class="text-xs text-slate-400">
-            <span id="auth-toggle-text">Don't have an account?</span>
-            <button onclick="toggleAuthMode()" class="text-purple-400 hover:text-purple-300 font-semibold ml-1 underline">
-              Toggle Form
-            </button>
-          </p>
-        </div>
+      <div class="text-center mb-6">
+        <h2 id="auth-title" class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Welcome to YOLOFIN</h2>
+        <p id="auth-subtitle" class="text-slate-400 text-sm mt-1">Sign in to sync your budget with Supabase</p>
       </div>
 
-      <!-- VIEW 2: DEDICATED RESET PASSWORD SCREEN -->
-      <div id="auth-view-reset" class="hidden">
-        <div class="text-center mb-6">
-          <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Set New Password</h2>
-          <p class="text-slate-400 text-sm mt-1">Please enter your new secure password below</p>
+      <div id="auth-error" class="hidden mb-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-200 text-xs text-center"></div>
+
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 font-medium mb-1">Email Address</label>
+          <input type="email" id="auth-email" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="name@domain.com">
+        </div>
+        <div>
+          <label class="block text-xs text-purple-300 font-medium mb-1">Password</label>
+          <input type="password" id="auth-password" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••">
         </div>
 
-        <div id="reset-error" class="hidden mb-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-200 text-xs text-center"></div>
+        <button type="submit" id="auth-btn" class="w-full py-3 mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/40 transition duration-200">
+          Sign In
+        </button>
+      </form>
 
-        <form onsubmit="handleNewPasswordSubmit(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs text-purple-300 font-medium mb-1">New Password</label>
-            <input type="password" id="new-password" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••">
-          </div>
-          <button type="submit" class="w-full py-3 mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/40 transition duration-200">
-            Update Password & Login
+      <div class="mt-6 text-center space-y-2">
+        <button onclick="handleForgotPassword()" class="text-xs text-purple-400 hover:text-purple-300 underline block w-full text-center">
+          Forgot Password?
+        </button>
+        <p class="text-xs text-slate-400">
+          <span id="auth-toggle-text">Don't have an account?</span>
+          <button onclick="toggleAuthMode()" class="text-purple-400 hover:text-purple-300 font-semibold ml-1 underline">
+            Toggle Form
           </button>
-        </form>
+        </p>
       </div>
-
     </div>
   </div>
 
@@ -278,52 +253,16 @@
 
     document.getElementById('tx-date').valueAsDate = new Date();
 
-    // --- SHOW RESET VIEW OR MAIN VIEW ---
-    function showResetView() {
-      document.getElementById('auth-view-main').classList.add('hidden');
-      document.getElementById('auth-view-reset').classList.remove('hidden');
-    }
-
-    // --- DIRECT URL HASH PARSER FOR PASSWORD RECOVERY ---
-    async function handleUrlHashRecovery() {
-      const hash = window.location.hash;
-      if (hash && hash.includes('type=recovery')) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token') || '';
-
-        if (accessToken) {
-          const { error: sessionError } = await supabaseClient.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (!sessionError) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            // Open modal and display the dedicated password reset form
-            document.getElementById('auth-modal')?.classList.remove('hidden');
-            showResetView();
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    // --- AUTHENTICATION & REDIRECT LISTENERS ---
+    // --- AUTHENTICATION & SESSION LISTENERS ---
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        document.getElementById('auth-modal')?.classList.remove('hidden');
-        showResetView();
-      } else if (session) {
-        // Only load main app if we are not actively in a password reset flow
-        if (document.getElementById('auth-view-reset').classList.contains('hidden')) {
-          currentUser = session.user;
-          document.getElementById('user-display-email').innerText = currentUser.email;
-          document.getElementById('auth-modal').classList.add('hidden');
-          document.getElementById('app-container').classList.remove('opacity-0', 'pointer-events-none');
-          fetchTransactions();
-        }
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('user-display-email').innerText = currentUser.email;
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('opacity-0', 'pointer-events-none');
+        fetchTransactions();
+      } else {
+        document.getElementById('auth-modal').classList.remove('hidden');
       }
     });
 
@@ -373,7 +312,7 @@
       }
 
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://theyologroupltd.github.io/YOLOFIN/',
+        redirectTo: 'https://theyologroupltd.github.io/YOLOFIN/forgot-password.html',
       });
 
       if (error) {
@@ -383,32 +322,12 @@
       }
     }
 
-    // --- SUBMIT NEW PASSWORD FROM FORM ---
-    async function handleNewPasswordSubmit(e) {
-      e.preventDefault();
-      const newPassword = document.getElementById('new-password').value;
-      const errEl = document.getElementById('reset-error');
-      errEl.classList.add('hidden');
-
-      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-      if (error) {
-        errEl.innerText = error.message;
-        errEl.classList.remove('hidden');
-      } else {
-        alert('Password updated successfully! Welcome to YOLOFIN.');
-        location.reload();
-      }
-    }
-
     async function logout() {
       await supabaseClient.auth.signOut();
       location.reload();
     }
 
     async function checkUserSession() {
-      const isRecovery = await handleUrlHashRecovery();
-      if (isRecovery) return;
-
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         currentUser = session.user;
