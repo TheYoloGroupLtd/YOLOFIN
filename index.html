@@ -253,7 +253,44 @@
 
     document.getElementById('tx-date').valueAsDate = new Date();
 
-    // --- AUTHENTICATION & REDIRECT EVENT LISTENER ---
+    // --- DIRECT URL HASH PARSER FOR PASSWORD RECOVERY ---
+    async function handleUrlHashRecovery() {
+      const hash = window.location.hash;
+      if (hash && hash.includes('type=recovery')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token') || '';
+
+        if (accessToken) {
+          const { error: sessionError } = await supabaseClient.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (!sessionError) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            document.getElementById('auth-modal')?.classList.add('hidden');
+            
+            setTimeout(async () => {
+              const newPassword = prompt('Enter your new password:');
+              if (newPassword) {
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                if (error) {
+                  alert('Error updating password: ' + error.message);
+                } else {
+                  alert('Password updated successfully! You are now logged in.');
+                  checkUserSession();
+                }
+              }
+            }, 100);
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // --- AUTHENTICATION & REDIRECT LISTENERS ---
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         document.getElementById('auth-modal')?.classList.add('hidden');
@@ -338,6 +375,10 @@
     }
 
     async function checkUserSession() {
+      // First check if coming from a recovery email hash
+      const isRecovery = await handleUrlHashRecovery();
+      if (isRecovery) return;
+
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         currentUser = session.user;
@@ -497,7 +538,7 @@
       document.getElementById('res-total').innerText = `₹${Math.round(total).toLocaleString('en-IN')}`;
     }
 
-    // Initial check on startup
+    // Execute session check and investment initialization
     checkUserSession();
     calculateInvestment();
   </script>
