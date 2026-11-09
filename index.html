@@ -1,321 +1,281 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>YOLOFIN - Household Expense Tracker & Financial Calculators</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOLOFIN - Smart Household Expense Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
-          }
-        }
-      }
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-  <!-- Supabase JS SDK -->
+  
+  <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Glassmorphism Styles -->
   <style>
-    /* Custom Purple Geometric Background for Login Screen */
-    .bg-login-purple {
-      background-color: #7c3aed;
-      background-image: 
-        linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(91, 33, 182, 0.7) 35%, rgba(167, 139, 250, 0.4) 70%, rgba(221, 214, 254, 0.2) 100%),
-        linear-gradient(215deg, #a78bfa 0%, #6d28d9 40%, #4c1d95 70%, #1e1b4b 100%);
-      background-size: cover;
-      background-position: center;
-      position: relative;
-      overflow: hidden;
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
     }
-    .bg-login-purple::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      left: -20%;
-      width: 60%;
-      height: 140%;
-      background: linear-gradient(120deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 100%);
-      transform: rotate(-25deg);
-      pointer-events: none;
+    .glass-card {
+      background: rgba(30, 27, 75, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
-    .bg-login-purple::after {
-      content: '';
-      position: absolute;
-      bottom: -20%;
-      left: 10%;
-      width: 40%;
-      height: 140%;
-      background: linear-gradient(120deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%);
-      transform: rotate(-25deg);
-      pointer-events: none;
+    .glass-input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: #ffffff;
+    }
+    .glass-input:focus {
+      outline: none;
+      border-color: #c084fc;
+      box-shadow: 0 0 12px rgba(192, 132, 252, 0.4);
     }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
+<body class="p-4 md:p-8">
 
-  <!-- AUTH MODAL WITH PURPLE BACKGROUND -->
-  <div id="auth-modal" class="fixed inset-0 z-50 bg-login-purple flex items-center justify-center p-4">
-    <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/30 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-8 space-y-6 relative z-10">
-      <div class="text-center space-y-2">
-        <div class="inline-flex bg-indigo-600 text-white p-3.5 rounded-2xl shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid fa-wallet text-2xl"></i>
-        </div>
-        <h2 id="auth-title" class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Welcome to YOLOFIN</h2>
-        <p class="text-xs text-slate-600 dark:text-slate-400" id="auth-subtitle">Sign in to sync your budget with Supabase</p>
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-card w-full max-w-md p-8 rounded-2xl border border-purple-500/30 shadow-2xl relative">
+      <div class="text-center mb-6">
+        <h2 id="auth-title" class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Welcome to YOLOFIN</h2>
+        <p id="auth-subtitle" class="text-slate-400 text-sm mt-1">Sign in to sync your budget with Supabase</p>
       </div>
 
-      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-        <div class="space-y-1">
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-              <i class="fa-regular fa-envelope"></i>
-            </span>
-            <input type="email" id="auth-email" required placeholder="name@example.com" class="w-full pl-9 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 outline-none text-sm transition" />
-          </div>
+      <div id="auth-error" class="hidden mb-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-200 text-xs text-center"></div>
+
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 font-medium mb-1">Email Address</label>
+          <input type="email" id="auth-email" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="name@domain.com">
+        </div>
+        <div>
+          <label class="block text-xs text-purple-300 font-medium mb-1">Password</label>
+          <input type="password" id="auth-password" required class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••">
         </div>
 
-        <div class="space-y-1">
-          <div class="flex justify-between items-center">
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Password</label>
-            <button type="button" onclick="handleForgotPassword()" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
-              Forgot Password?
-            </button>
-          </div>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-              <i class="fa-solid fa-lock"></i>
-            </span>
-            <input type="password" id="auth-password" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white/70 dark:bg-slate-800/70 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 outline-none text-sm transition" />
-          </div>
-        </div>
-
-        <p id="auth-error" class="text-xs text-rose-500 text-center font-medium hidden bg-rose-50 dark:bg-rose-950/40 py-2 rounded-lg border border-rose-200 dark:border-rose-900"></p>
-
-        <button type="submit" id="auth-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold transition text-sm shadow-lg shadow-indigo-600/30 active:scale-[0.99]">Sign In</button>
+        <button type="submit" id="auth-btn" class="w-full py-3 mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-900/40 transition duration-200">
+          Sign In
+        </button>
       </form>
 
-      <div class="text-center text-xs text-slate-600 dark:text-slate-400">
-        <span id="auth-toggle-text">Don't have an account?</span>
-        <button type="button" onclick="toggleAuthMode()" class="text-indigo-600 dark:text-indigo-400 font-bold hover:underline ml-1">Sign Up</button>
+      <div class="mt-6 text-center space-y-2">
+        <button onclick="handleForgotPassword()" class="text-xs text-purple-400 hover:text-purple-300 underline block w-full text-center">
+          Forgot Password?
+        </button>
+        <p class="text-xs text-slate-400">
+          <span id="auth-toggle-text">Don't have an account?</span>
+          <button onclick="toggleAuthMode()" class="text-purple-400 hover:text-purple-300 font-semibold ml-1 underline">
+            Toggle Form
+          </button>
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER -->
-  <div id="app-container" class="flex flex-col min-h-screen opacity-0 pointer-events-none transition-opacity duration-300">
-    <header class="bg-indigo-600 dark:bg-slate-900 shadow-md border-b border-indigo-700 dark:border-slate-800 transition-colors">
-      <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-          <div class="bg-white/10 p-2 rounded-lg text-white">
-            <i class="fa-solid fa-wallet text-xl"></i>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold tracking-wide text-white">YOLOFIN</h1>
-            <p class="text-xs text-indigo-200 dark:text-slate-400">Cloud Powered by Supabase</p>
-          </div>
-        </div>
-        
-        <div class="flex items-center gap-3">
-          <nav class="flex gap-1 bg-indigo-700/60 dark:bg-slate-800 p-1 rounded-lg text-sm">
-            <button id="nav-tracker" onclick="switchView('tracker')" class="px-4 py-2 rounded-md font-medium transition bg-white text-indigo-700 dark:bg-indigo-600 dark:text-white shadow">
-              <i class="fa-solid fa-receipt mr-1"></i> Tracker
-            </button>
-            <button id="nav-calc" onclick="switchView('calculators')" class="px-4 py-2 rounded-md font-medium transition text-indigo-100 hover:text-white dark:text-slate-300 dark:hover:text-white">
-              <i class="fa-solid fa-calculator mr-1"></i> Calculators
-            </button>
-          </nav>
+  <!-- MAIN APPLICATION CONTAINER -->
+  <div id="app-container" class="max-w-7xl mx-auto opacity-0 pointer-events-none transition-opacity duration-300">
+    
+    <!-- HEADER -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-purple-900/40 gap-4">
+      <div>
+        <h1 class="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400">YOLOFIN</h1>
+        <p class="text-xs text-purple-300">Smart Household Expense & Investment Suite</p>
+      </div>
 
-          <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-indigo-700/60 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 hover:text-white transition" title="Toggle Theme">
-            <i id="theme-icon" class="fa-solid fa-moon"></i>
-          </button>
-
-          <div class="flex items-center gap-2 pl-2 border-l border-indigo-500/30 dark:border-slate-700">
-            <span id="user-display-email" class="text-xs font-semibold text-indigo-100 dark:text-slate-300 hidden sm:inline"></span>
-            <button onclick="logout()" class="p-2.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-xs" title="Logout">
-              <i class="fa-solid fa-right-from-bracket"></i>
-            </button>
-          </div>
-        </div>
+      <div class="flex items-center gap-4">
+        <span id="user-display-email" class="text-xs bg-purple-950/60 border border-purple-500/30 px-3 py-1.5 rounded-full text-purple-300"></span>
+        <button onclick="logout()" class="text-xs bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 px-4 py-1.5 rounded-xl transition">
+          Sign Out
+        </button>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-      <section id="content-tracker" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Income</p>
-            <p id="total-income" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">₹0.00</p>
+    <!-- MAIN DASHBOARD GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      
+      <!-- COLUMN 1: TRANSACTION ENTRY FORM -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <h3 class="text-lg font-bold text-purple-300 flex items-center gap-2">
+          <span>➕</span> Add New Transaction
+        </h3>
+        
+        <form onsubmit="handleAddTransaction(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs text-purple-300 mb-1">Description</label>
+            <input type="text" id="tx-desc" required class="w-full px-3 py-2 rounded-lg glass-input text-sm" placeholder="e.g., Grocery Shopping">
           </div>
-          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Expenses</p>
-            <p id="total-expenses" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">₹0.00</p>
-          </div>
-          <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Net Balance</p>
-            <p id="net-balance" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">₹0.00</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
-            <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-              <i class="fa-solid fa-plus-circle text-indigo-600 dark:text-indigo-400"></i> Add Transaction
-            </h2>
-            <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
-              <input type="hidden" id="tx-id" />
-              
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Type</label>
-                <div class="grid grid-cols-2 gap-2">
-                  <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-emerald-50 dark:has-[:checked]:bg-emerald-950/40 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-700 dark:has-[:checked]:text-emerald-400">
-                    <input type="radio" name="tx-type" value="income" class="sr-only" checked /> Income
-                  </label>
-                  <label class="flex items-center justify-center p-2 border dark:border-slate-700 rounded-lg cursor-pointer text-sm font-medium has-[:checked]:bg-rose-50 dark:has-[:checked]:bg-rose-950/40 has-[:checked]:border-rose-500 has-[:checked]:text-rose-700 dark:has-[:checked]:text-rose-400">
-                    <input type="radio" name="tx-type" value="expense" class="sr-only" /> Expense
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label for="tx-desc" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Description</label>
-                <input type="text" id="tx-desc" required placeholder="e.g. Salary, Rent, Grocery" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-              </div>
-
-              <div>
-                <label for="tx-amount" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Amount (₹)</label>
-                <input type="number" id="tx-amount" min="0.01" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-              </div>
-
-              <div>
-                <label for="tx-category" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
-                <select id="tx-category" class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 dark:text-white">
-                  <option value="Salary">Salary</option>
-                  <option value="Investment">Investment</option>
-                  <option value="Housing">Housing & Rent</option>
-                  <option value="Food">Groceries & Food</option>
-                  <option value="Utilities">Utilities & Bills</option>
-                  <option value="Transport">Transport & Fuel</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label for="tx-date" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Date</label>
-                <input type="date" id="tx-date" required class="w-full px-3 py-2 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-              </div>
-
-              <div class="flex gap-2">
-                <button type="submit" id="btn-save" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition text-sm">Save Transaction</button>
-                <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-300 dark:hover:bg-slate-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-
-          <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-              <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Expense Breakdown</h2>
-              <div class="h-64 flex justify-center items-center">
-                <canvas id="expense-chart"></canvas>
-              </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-purple-300 mb-1">Amount (₹)</label>
+              <input type="number" step="0.01" id="tx-amount" required class="w-full px-3 py-2 rounded-lg glass-input text-sm" placeholder="0.00">
             </div>
+            <div>
+              <label class="block text-xs text-purple-300 mb-1">Type</label>
+              <select id="tx-type" class="w-full px-3 py-2 rounded-lg glass-input text-sm">
+                <option value="expense" class="bg-slate-900 text-red-400">Expense</option>
+                <option value="income" class="bg-slate-900 text-green-400">Income</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-purple-300 mb-1">Category</label>
+              <select id="tx-category" class="w-full px-3 py-2 rounded-lg glass-input text-sm">
+                <option value="Food" class="bg-slate-900">Food</option>
+                <option value="Utilities" class="bg-slate-900">Utilities</option>
+                <option value="Rent" class="bg-slate-900">Rent</option>
+                <option value="Entertainment" class="bg-slate-900">Entertainment</option>
+                <option value="Salary" class="bg-slate-900">Salary</option>
+                <option value="Other" class="bg-slate-900">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-purple-300 mb-1">Date</label>
+              <input type="date" id="tx-date" required class="w-full px-3 py-2 rounded-lg glass-input text-sm">
+            </div>
+          </div>
 
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-              <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</h2>
-                <div>
-                  <select id="filter-category" onchange="renderTracker()" class="text-xs px-3 py-2 border dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 dark:text-white">
-                    <option value="ALL">All Categories</option>
-                    <option value="Salary">Salary</option>
-                    <option value="Investment">Investment</option>
-                    <option value="Housing">Housing</option>
-                    <option value="Food">Food</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
+          <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold rounded-xl shadow-md transition">
+            Save Record
+          </button>
+        </form>
+      </div>
 
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr class="border-b dark:border-slate-800 text-slate-400 font-semibold text-xs">
-                      <th class="py-2">Date</th>
-                      <th class="py-2">Description</th>
-                      <th class="py-2">Category</th>
-                      <th class="py-2 text-right">Amount</th>
-                      <th class="py-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                </table>
-              </div>
+      <!-- COLUMN 2: FINANCIAL SUMMARY & CHART -->
+      <div class="glass-card p-6 rounded-2xl space-y-6 flex flex-col justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-purple-300 mb-4">Financial Overview</h3>
+          <div class="grid grid-cols-3 gap-2 text-center mb-6">
+            <div class="bg-purple-950/40 p-3 rounded-xl border border-purple-500/20">
+              <span class="block text-[10px] text-purple-300 uppercase">Income</span>
+              <span id="total-income" class="text-base font-bold text-green-400">₹0.00</span>
+            </div>
+            <div class="bg-purple-950/40 p-3 rounded-xl border border-purple-500/20">
+              <span class="block text-[10px] text-purple-300 uppercase">Expenses</span>
+              <span id="total-expense" class="text-base font-bold text-red-400">₹0.00</span>
+            </div>
+            <div class="bg-purple-950/40 p-3 rounded-xl border border-purple-500/20">
+              <span class="block text-[10px] text-purple-300 uppercase">Balance</span>
+              <span id="net-balance" class="text-base font-bold text-indigo-300">₹0.00</span>
             </div>
           </div>
         </div>
-      </section>
 
-      <section id="content-calculators" class="hidden space-y-6">
-        <div class="flex overflow-x-auto gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-          <button onclick="setCalcTab('sip')" class="calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">SIP Calculator</button>
-          <button onclick="setCalcTab('lumpsum')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Lumpsum Calculator</button>
-          <button onclick="setCalcTab('swp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">SWP Calculator</button>
-          <button onclick="setCalcTab('stp')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">STP Calculator</button>
-          <button onclick="setCalcTab('stepup')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Step-Up SIP</button>
+        <div class="w-full h-48">
+          <canvas id="expenseChart"></canvas>
         </div>
+      </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs"></div>
-          <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-1">Invested Amount</p>
-                <p class="text-xl font-bold text-slate-800 dark:text-white mt-1" id="res-val-1">₹0</p>
-              </div>
-              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-2">Est. Returns</p>
-                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1" id="res-val-2">₹0</p>
-              </div>
-              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-                <p class="text-xs font-medium text-slate-500 dark:text-slate-400" id="res-label-3">Total Future Value</p>
-                <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="res-val-3">₹0</p>
-              </div>
-            </div>
-            <div class="h-64 w-full flex justify-center items-center">
-              <canvas id="calc-chart"></canvas>
-            </div>
+      <!-- COLUMN 3: FINANCIAL CALCULATOR SUITE -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex justify-between items-center border-b border-purple-800/40 pb-2">
+          <h3 class="text-lg font-bold text-purple-300">Calculators</h3>
+          <div class="flex gap-1">
+            <button onclick="setCalcTab('sip')" id="tab-sip" class="px-2 py-1 text-xs rounded-md bg-purple-600 text-white">SIP</button>
+            <button onclick="setCalcTab('lumpsum')" id="tab-lumpsum" class="px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-400">Lumpsum</button>
+            <button onclick="setCalcTab('swp')" id="tab-swp" class="px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-400">SWP</button>
           </div>
         </div>
-      </section>
-    </main>
+
+        <div class="space-y-3">
+          <div>
+            <label id="calc-input1-label" class="block text-xs text-purple-300 mb-1">Monthly Investment (₹)</label>
+            <input type="number" id="calc-input1" value="5000" class="w-full px-3 py-1.5 rounded-lg glass-input text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-purple-300 mb-1">Expected Return Rate (% p.a)</label>
+            <input type="number" step="0.1" id="calc-rate" value="12" class="w-full px-3 py-1.5 rounded-lg glass-input text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-purple-300 mb-1">Time Horizon (Years)</label>
+            <input type="number" id="calc-years" value="10" class="w-full px-3 py-1.5 rounded-lg glass-input text-sm">
+          </div>
+
+          <button onclick="calculateInvestment()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">
+            Calculate Projection
+          </button>
+        </div>
+
+        <div class="p-3 bg-purple-950/60 rounded-xl border border-purple-500/20 text-xs space-y-1">
+          <div class="flex justify-between"><span class="text-slate-400">Invested Amount:</span><span id="res-invested" class="font-bold">₹0</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Est. Returns:</span><span id="res-returns" class="font-bold text-green-400">₹0</span></div>
+          <div class="flex justify-between border-t border-purple-800/40 pt-1"><span class="text-purple-300 font-semibold">Total Value:</span><span id="res-total" class="font-bold text-indigo-300">₹0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTION TABLE -->
+    <div class="glass-card p-6 rounded-2xl">
+      <h3 class="text-lg font-bold text-purple-300 mb-4">Transaction History</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-purple-800/40 text-purple-400">
+              <th class="p-3">Date</th>
+              <th class="p-3">Description</th>
+              <th class="p-3">Category</th>
+              <th class="p-3">Type</th>
+              <th class="p-3 text-right">Amount</th>
+              <th class="p-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tx-table-body" class="divide-y divide-purple-950">
+            <!-- Dynamic Transaction Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
+  <!-- APPLICATION JAVASCRIPT -->
   <script>
-    // --- SUPABASE CONFIGURATION ---
+    // --- SUPABASE INITIALIZATION ---
     const SUPABASE_URL = 'https://xvkqawagfybvweopuphe.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_q2BHVLYSqEuoZ3WQdwp1sw__bjUkmwh';
-    
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let isSignup = false;
     let currentUser = null;
     let transactions = [];
     let expenseChartInstance = null;
-    let calcChartInstance = null;
     let activeCalc = 'sip';
 
     document.getElementById('tx-date').valueAsDate = new Date();
 
-    // --- AUTHENTICATION LOGIC ---
+    // --- AUTHENTICATION & REDIRECT EVENT LISTENER ---
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        document.getElementById('auth-modal')?.classList.add('hidden');
+        const newPassword = prompt('Enter your new password:');
+        if (newPassword) {
+          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+          if (error) {
+            alert('Error updating password: ' + error.message);
+          } else {
+            alert('Password updated successfully! You are now logged in.');
+            checkUserSession();
+          }
+        }
+      } else if (session) {
+        currentUser = session.user;
+        document.getElementById('user-display-email').innerText = currentUser.email;
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('opacity-0', 'pointer-events-none');
+        fetchTransactions();
+      }
+    });
+
     function toggleAuthMode() {
       isSignup = !isSignup;
       document.getElementById('auth-title').innerText = isSignup ? 'Create YOLOFIN Account' : 'Welcome to YOLOFIN';
@@ -336,9 +296,7 @@
         res = await supabaseClient.auth.signUp({ 
           email, 
           password,
-          options: {
-            emailRedirectTo: 'https://theyologroupltd.github.io/YOLOFIN/'
-          }
+          options: { redirectTo: 'https://theyologroupltd.github.io/YOLOFIN/' }
         });
       } else {
         res = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -349,7 +307,7 @@
         errEl.classList.remove('hidden');
       } else {
         if (isSignup && !res.data.session) {
-          alert('Signup successful! Please check your email to confirm your account before logging in.');
+          alert('Signup successful! Please check your email inbox to confirm your account.');
         } else {
           checkUserSession();
         }
@@ -374,21 +332,6 @@
       }
     }
 
-    // Listen for password recovery state
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        const newPassword = prompt('Enter your new password:');
-        if (newPassword) {
-          const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-          if (error) {
-            alert('Error updating password: ' + error.message);
-          } else {
-            alert('Password updated successfully! You are now logged in.');
-          }
-        }
-      }
-    });
-
     async function logout() {
       await supabaseClient.auth.signOut();
       location.reload();
@@ -407,368 +350,156 @@
       }
     }
 
-    // --- SUPABASE DATABASE CRUD ---
+    // --- TRANSACTION DATABASE OPERATIONS ---
     async function fetchTransactions() {
+      if (!currentUser) return;
       const { data, error } = await supabaseClient
         .from('transactions')
         .select('*')
+        .eq('user_id', currentUser.id)
         .order('date', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching transactions:', error.message);
-      } else {
-        transactions = data || [];
-        renderTracker();
+      if (!error && data) {
+        transactions = data;
+        renderDashboard();
       }
     }
 
-    async function handleFormSubmit(e) {
+    async function handleAddTransaction(e) {
       e.preventDefault();
-      const id = document.getElementById('tx-id').value;
-      const type = document.querySelector('input[name="tx-type"]:checked').value;
-      const description = document.getElementById('tx-desc').value;
-      const amount = parseFloat(document.getElementById('tx-amount').value);
-      const category = document.getElementById('tx-category').value;
-      const date = document.getElementById('tx-date').value;
+      if (!currentUser) return;
 
-      if (id) {
-        const { error } = await supabaseClient
-          .from('transactions')
-          .update({ type, description, amount, category, date })
-          .eq('id', id);
+      const newTx = {
+        user_id: currentUser.id,
+        description: document.getElementById('tx-desc').value,
+        amount: parseFloat(document.getElementById('tx-amount').value),
+        type: document.getElementById('tx-type').value,
+        category: document.getElementById('tx-category').value,
+        date: document.getElementById('tx-date').value
+      };
 
-        if (error) alert('Error updating: ' + error.message);
-      } else {
-        const { error } = await supabaseClient
-          .from('transactions')
-          .insert([{ user_id: currentUser.id, type, description, amount, category, date }]);
-
-        if (error) alert('Error adding: ' + error.message);
-      }
-
-      resetForm();
-      fetchTransactions();
-    }
-
-    async function deleteTx(id) {
-      const { error } = await supabaseClient
-        .from('transactions')
-        .delete()
-        .eq('id', id);
-
-      if (error) alert('Error deleting: ' + error.message);
-      else fetchTransactions();
-    }
-
-    function editTx(id) {
-      const tx = transactions.find(t => t.id === id);
-      if (!tx) return;
-      document.getElementById('tx-id').value = tx.id;
-      document.querySelector(`input[name="tx-type"][value="${tx.type}"]`).checked = true;
-      document.getElementById('tx-desc').value = tx.description;
-      document.getElementById('tx-amount').value = tx.amount;
-      document.getElementById('tx-category').value = tx.category;
-      document.getElementById('tx-date').value = tx.date;
-      document.getElementById('btn-save').innerText = 'Update Transaction';
-      document.getElementById('btn-cancel').classList.remove('hidden');
-    }
-
-    function resetForm() {
-      document.getElementById('tx-id').value = '';
-      document.getElementById('tx-form').reset();
-      document.getElementById('tx-date').valueAsDate = new Date();
-      document.getElementById('btn-save').innerText = 'Save Transaction';
-      document.getElementById('btn-cancel').classList.add('hidden');
-    }
-
-    // --- DARK MODE LOGIC ---
-    function toggleDarkMode() {
-      const html = document.documentElement;
-      const icon = document.getElementById('theme-icon');
-      if (html.classList.contains('dark')) {
-        html.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        icon.className = "fa-solid fa-moon";
-      } else {
-        html.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        icon.className = "fa-solid fa-sun";
-      }
-      renderTracker();
-      if (!document.getElementById('content-calculators').classList.contains('hidden')) calculateResults();
-    }
-
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.getElementById('theme-icon').className = "fa-solid fa-sun";
-    }
-
-    // --- NAVIGATION ---
-    function switchView(view) {
-      document.getElementById('content-tracker').classList.toggle('hidden', view !== 'tracker');
-      document.getElementById('content-calculators').classList.toggle('hidden', view !== 'calculators');
-      
-      const trackerBtn = document.getElementById('nav-tracker');
-      const calcBtn = document.getElementById('nav-calc');
-
-      if (view === 'tracker') {
-        trackerBtn.className = "px-4 py-2 rounded-md font-medium transition bg-white text-indigo-700 dark:bg-indigo-600 dark:text-white shadow";
-        calcBtn.className = "px-4 py-2 rounded-md font-medium transition text-indigo-100 hover:text-white dark:text-slate-300 dark:hover:text-white";
-        renderTracker();
-      } else {
-        calcBtn.className = "px-4 py-2 rounded-md font-medium transition bg-white text-indigo-700 dark:bg-indigo-600 dark:text-white shadow";
-        trackerBtn.className = "px-4 py-2 rounded-md font-medium transition text-indigo-100 hover:text-white dark:text-slate-300 dark:hover:text-white";
-        renderCalcInputs();
+      const { data, error } = await supabaseClient.from('transactions').insert([newTx]).select();
+      if (!error && data) {
+        transactions.unshift(data[0]);
+        renderDashboard();
+        document.getElementById('tx-desc').value = '';
+        document.getElementById('tx-amount').value = '';
+      } else if (error) {
+        alert('Failed to save transaction: ' + error.message);
       }
     }
 
-    function renderTracker() {
-      const catFilter = document.getElementById('filter-category').value;
-      const filtered = transactions.filter(t => catFilter === 'ALL' || t.category === catFilter);
+    async function deleteTransaction(id) {
+      const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+      if (!error) {
+        transactions = transactions.filter(t => t.id !== id);
+        renderDashboard();
+      }
+    }
 
+    function renderDashboard() {
       let income = 0, expense = 0;
       const categoryTotals = {};
+      const tbody = document.getElementById('tx-table-body');
+      tbody.innerHTML = '';
 
       transactions.forEach(t => {
-        if (t.type === 'income') income += parseFloat(t.amount);
+        if (t.type === 'income') income += t.amount;
         else {
-          expense += parseFloat(t.amount);
-          categoryTotals[t.category] = (categoryTotals[t.category] || 0) + parseFloat(t.amount);
+          expense += t.amount;
+          categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
         }
-      });
 
-      document.getElementById('total-income').innerText = `₹${income.toLocaleString('en-IN')}`;
-      document.getElementById('total-expenses').innerText = `₹${expense.toLocaleString('en-IN')}`;
-      document.getElementById('net-balance').innerText = `₹${(income - expense).toLocaleString('en-IN')}`;
-
-      const tbody = document.getElementById('tx-table-body');
-      tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="5" class="text-center py-4 text-slate-400">No transactions recorded</td></tr>';
-      
-      filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition";
+        tr.className = "hover:bg-purple-950/30 transition";
         tr.innerHTML = `
-          <td class="py-2.5 text-xs text-slate-500 dark:text-slate-400">${t.date}</td>
-          <td class="py-2.5 font-medium text-slate-700 dark:text-slate-200">${t.description}</td>
-          <td class="py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${t.category}</span></td>
-          <td class="py-2.5 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toLocaleString('en-IN')}
-          </td>
-          <td class="py-2.5 text-center">
-            <button onclick="editTx('${t.id}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 mr-2"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="deleteTx('${t.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+          <td class="p-3 text-slate-400">${t.date}</td>
+          <td class="p-3 font-medium">${t.description}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/30 text-[10px]">${t.category}</span></td>
+          <td class="p-3"><span class="${t.type === 'income' ? 'text-green-400' : 'text-red-400'} font-semibold capitalize">${t.type}</span></td>
+          <td class="p-3 text-right font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}">₹${t.amount.toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteTransaction('${t.id}')" class="text-red-400 hover:text-red-300 text-xs">🗑️</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
-      const isDark = document.documentElement.classList.contains('dark');
-      const ctx = document.getElementById('expense-chart').getContext('2d');
+      document.getElementById('total-income').innerText = `₹${income.toFixed(2)}`;
+      document.getElementById('total-expense').innerText = `₹${expense.toFixed(2)}`;
+      document.getElementById('net-balance').innerText = `₹${(income - expense).toFixed(2)}`;
+
+      renderChart(categoryTotals);
+    }
+
+    function renderChart(categoryTotals) {
+      const ctx = document.getElementById('expenseChart').getContext('2d');
       if (expenseChartInstance) expenseChartInstance.destroy();
+
+      const labels = Object.keys(categoryTotals);
+      const data = Object.values(categoryTotals);
 
       expenseChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(categoryTotals),
+          labels: labels.length ? labels : ['No Data'],
           datasets: [{
-            data: Object.values(categoryTotals),
-            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b'],
-            borderWidth: isDark ? 0 : 2
+            data: data.length ? data : [1],
+            backgroundColor: ['#c084fc', '#818cf8', '#f472b6', '#38bdf8', '#fbbf24', '#34d399']
           }]
         },
-        options: { 
-          responsive: true, 
+        options: {
+          responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: isDark ? '#cbd5e1' : '#334155' } }
+            legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 10 } } }
           }
         }
       });
     }
 
-    // --- CALCULATOR LOGIC ---
+    // --- CALCULATORS LOGIC ---
     function setCalcTab(tab) {
       activeCalc = tab;
-      document.querySelectorAll('.calc-tab-btn').forEach(btn => {
-        btn.className = "calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
-      });
-      event.target.className = "calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400";
-      renderCalcInputs();
+      document.getElementById('tab-sip').className = tab === 'sip' ? 'px-2 py-1 text-xs rounded-md bg-purple-600 text-white' : 'px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-400';
+      document.getElementById('tab-lumpsum').className = tab === 'lumpsum' ? 'px-2 py-1 text-xs rounded-md bg-purple-600 text-white' : 'px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-400';
+      document.getElementById('tab-swp').className = tab === 'swp' ? 'px-2 py-1 text-xs rounded-md bg-purple-600 text-white' : 'px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-400';
+      
+      document.getElementById('calc-input1-label').innerText = tab === 'sip' ? 'Monthly Investment (₹)' : (tab === 'lumpsum' ? 'Total Investment (₹)' : 'Total Corpus (₹)');
+      calculateInvestment();
     }
 
-    function renderCalcInputs() {
-      const container = document.getElementById('calc-inputs');
-      if (activeCalc === 'sip') {
-        container.innerHTML = `
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">SIP Calculator</h2>
-          ${sliderInput('Monthly Investment (₹)', 'sip-amount', 500, 100000, 5000, 500)}
-          ${sliderInput('Expected Return Rate (p.a %)', 'sip-rate', 1, 30, 12, 0.5)}
-          ${sliderInput('Time Period (Years)', 'sip-years', 1, 40, 10, 1)}
-        `;
-      } else if (activeCalc === 'lumpsum') {
-        container.innerHTML = `
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Lumpsum Calculator</h2>
-          ${sliderInput('Total Investment (₹)', 'lump-amount', 1000, 1000000, 100000, 5000)}
-          ${sliderInput('Expected Return Rate (p.a %)', 'lump-rate', 1, 30, 12, 0.5)}
-          ${sliderInput('Time Period (Years)', 'lump-years', 1, 40, 10, 1)}
-        `;
-      } else if (activeCalc === 'swp') {
-        container.innerHTML = `
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">SWP Calculator</h2>
-          ${sliderInput('Total Corpus (₹)', 'swp-corpus', 100000, 10000000, 1000000, 50000)}
-          ${sliderInput('Monthly Withdrawal (₹)', 'swp-draw', 1000, 100000, 10000, 1000)}
-          ${sliderInput('Expected Return Rate (p.a %)', 'swp-rate', 1, 30, 8, 0.5)}
-          ${sliderInput('Time Period (Years)', 'swp-years', 1, 30, 10, 1)}
-        `;
-      } else if (activeCalc === 'stp') {
-        container.innerHTML = `
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">STP Calculator</h2>
-          ${sliderInput('Initial Transferring Corpus (₹)', 'stp-corpus', 50000, 5000000, 500000, 25000)}
-          ${sliderInput('Monthly Transfer Amount (₹)', 'stp-transfer', 1000, 100000, 10000, 1000)}
-          ${sliderInput('Transferor Fund Return (% p.a)', 'stp-source-rate', 1, 15, 6, 0.5)}
-          ${sliderInput('Destination Fund Return (% p.a)', 'stp-dest-rate', 1, 30, 12, 0.5)}
-          ${sliderInput('Duration (Years)', 'stp-years', 1, 30, 5, 1)}
-        `;
-      } else if (activeCalc === 'stepup') {
-        container.innerHTML = `
-          <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Step-Up SIP Calculator</h2>
-          ${sliderInput('Initial Monthly SIP (₹)', 'step-amount', 500, 100000, 5000, 500)}
-          ${sliderInput('Annual Step-Up (%)', 'step-percent', 1, 50, 10, 1)}
-          ${sliderInput('Expected Return Rate (p.a %)', 'step-rate', 1, 30, 12, 0.5)}
-          ${sliderInput('Time Period (Years)', 'step-years', 1, 40, 10, 1)}
-        `;
-      }
-      calculateResults();
-    }
+    function calculateInvestment() {
+      const p = parseFloat(document.getElementById('calc-input1').value) || 0;
+      const r = (parseFloat(document.getElementById('calc-rate').value) || 0) / 100;
+      const n = parseFloat(document.getElementById('calc-years').value) || 0;
 
-    function sliderInput(label, id, min, max, value, step) {
-      return `
-        <div class="space-y-1">
-          <div class="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-            <span>${label}</span>
-            <span id="${id}-val" class="text-indigo-600 dark:text-indigo-400">${value}</span>
-          </div>
-          <input type="range" id="${id}" min="${min}" max="${max}" value="${value}" step="${step}" 
-            oninput="document.getElementById('${id}-val').innerText = parseFloat(this.value).toLocaleString('en-IN'); calculateResults();" 
-            class="w-full accent-indigo-600 cursor-pointer" />
-        </div>
-      `;
-    }
-
-    function calculateResults() {
-      let invested = 0, returns = 0, total = 0;
+      let invested = 0, total = 0, returns = 0;
 
       if (activeCalc === 'sip') {
-        const P = parseFloat(document.getElementById('sip-amount').value);
-        const i = parseFloat(document.getElementById('sip-rate').value) / 12 / 100;
-        const n = parseFloat(document.getElementById('sip-years').value) * 12;
-
-        total = P * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
-        invested = P * n;
+        const i = r / 12;
+        const months = n * 12;
+        invested = p * months;
+        total = p * ((Math.pow(1 + i, months) - 1) / i) * (1 + i);
         returns = total - invested;
-
       } else if (activeCalc === 'lumpsum') {
-        const P = parseFloat(document.getElementById('lump-amount').value);
-        const r = parseFloat(document.getElementById('lump-rate').value) / 100;
-        const n = parseFloat(document.getElementById('lump-years').value);
-
-        total = P * Math.pow(1 + r, n);
-        invested = P;
+        invested = p;
+        total = p * Math.pow(1 + r, n);
         returns = total - invested;
-
       } else if (activeCalc === 'swp') {
-        let corpus = parseFloat(document.getElementById('swp-corpus').value);
-        const draw = parseFloat(document.getElementById('swp-draw').value);
-        const r = parseFloat(document.getElementById('swp-rate').value) / 12 / 100;
-        const months = parseFloat(document.getElementById('swp-years').value) * 12;
-
-        let totalWithdrawn = 0;
-        for (let m = 0; m < months; m++) {
-          corpus = (corpus - draw) * (1 + r);
-          totalWithdrawn += draw;
-          if (corpus <= 0) { corpus = 0; break; }
-        }
-
-        invested = parseFloat(document.getElementById('swp-corpus').value);
-        returns = totalWithdrawn;
-        total = corpus + totalWithdrawn;
-
-      } else if (activeCalc === 'stp') {
-        let sourceCorpus = parseFloat(document.getElementById('stp-corpus').value);
-        const transfer = parseFloat(document.getElementById('stp-transfer').value);
-        const rSource = parseFloat(document.getElementById('stp-source-rate').value) / 12 / 100;
-        const rDest = parseFloat(document.getElementById('stp-dest-rate').value) / 12 / 100;
-        const months = parseFloat(document.getElementById('stp-years').value) * 12;
-
-        let destCorpus = 0;
-        for (let m = 0; m < months; m++) {
-          if (sourceCorpus >= transfer) {
-            sourceCorpus -= transfer;
-            destCorpus = (destCorpus + transfer) * (1 + rDest);
-          } else {
-            destCorpus = (destCorpus + sourceCorpus) * (1 + rDest);
-            sourceCorpus = 0;
-          }
-          sourceCorpus *= (1 + rSource);
-        }
-
-        invested = parseFloat(document.getElementById('stp-corpus').value);
-        total = sourceCorpus + destCorpus;
-        returns = total - invested;
-
-      } else if (activeCalc === 'stepup') {
-        let P = parseFloat(document.getElementById('step-amount').value);
-        const step = parseFloat(document.getElementById('step-percent').value) / 100;
-        const r = parseFloat(document.getElementById('step-rate').value) / 12 / 100;
-        const years = parseFloat(document.getElementById('step-years').value);
-
-        total = 0;
-        invested = 0;
-
-        for (let y = 0; y < years; y++) {
-          for (let m = 0; m < 12; m++) {
-            total = (total + P) * (1 + r);
-            invested += P;
-          }
-          P *= (1 + step);
-        }
+        invested = p;
+        total = p * Math.pow(1 + r, n);
         returns = total - invested;
       }
 
-      document.getElementById('res-label-1').innerText = activeCalc === 'swp' ? 'Initial Corpus' : 'Invested Amount';
-      document.getElementById('res-label-2').innerText = activeCalc === 'swp' ? 'Total Withdrawn' : 'Est. Returns';
-      document.getElementById('res-label-3').innerText = activeCalc === 'swp' ? 'Final Balance' : 'Total Future Value';
-
-      document.getElementById('res-val-1').innerText = `₹${Math.round(invested).toLocaleString('en-IN')}`;
-      document.getElementById('res-val-2').innerText = `₹${Math.round(returns).toLocaleString('en-IN')}`;
-      document.getElementById('res-val-3').innerText = `₹${Math.round(activeCalc === 'swp' ? (total - returns) : total).toLocaleString('en-IN')}`;
-
-      const isDark = document.documentElement.classList.contains('dark');
-      const ctx = document.getElementById('calc-chart').getContext('2d');
-      if (calcChartInstance) calcChartInstance.destroy();
-
-      calcChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: [document.getElementById('res-label-1').innerText, document.getElementById('res-label-2').innerText],
-          datasets: [{
-            data: [Math.round(invested), Math.round(returns)],
-            backgroundColor: ['#6366f1', '#10b981'],
-            borderWidth: isDark ? 0 : 2
-          }]
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: isDark ? '#cbd5e1' : '#334155' } }
-          }
-        }
-      });
+      document.getElementById('res-invested').innerText = `₹${Math.round(invested).toLocaleString('en-IN')}`;
+      document.getElementById('res-returns').innerText = `₹${Math.round(returns).toLocaleString('en-IN')}`;
+      document.getElementById('res-total').innerText = `₹${Math.round(total).toLocaleString('en-IN')}`;
     }
 
-    // Initialize Session Check on Load
+    // Initial check on startup
     checkUserSession();
+    calculateInvestment();
   </script>
 </body>
 </html>
