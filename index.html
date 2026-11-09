@@ -19,12 +19,47 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
 
+  <!-- AUTH MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-md p-8 space-y-6">
+      <div class="text-center space-y-2">
+        <div class="inline-flex bg-indigo-600 text-white p-3 rounded-xl shadow-md">
+          <i class="fa-solid fa-wallet text-2xl"></i>
+        </div>
+        <h2 id="auth-title" class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome to YOLOFIN</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400" id="auth-subtitle">Sign in to sync your budget with Supabase</p>
+      </div>
+
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div class="space-y-1">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400">Email Address</label>
+          <input type="email" id="auth-email" required placeholder="name@example.com" class="w-full px-3 py-2.5 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
+          <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-3 py-2.5 border dark:border-slate-700 rounded-lg bg-transparent dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+        </div>
+
+        <p id="auth-error" class="text-xs text-rose-500 text-center font-medium hidden"></p>
+
+        <button type="submit" id="auth-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition text-sm shadow">Sign In</button>
+      </form>
+
+      <div class="text-center text-xs text-slate-500 dark:text-slate-400">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <button type="button" onclick="toggleAuthMode()" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline ml-1">Sign Up</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN APP CONTAINER -->
-  <div class="flex flex-col min-h-screen">
-    <!-- Header -->
+  <div id="app-container" class="flex flex-col min-h-screen opacity-0 pointer-events-none transition-opacity duration-300">
     <header class="bg-indigo-600 dark:bg-slate-900 shadow-md border-b border-indigo-700 dark:border-slate-800 transition-colors">
       <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center gap-3">
@@ -33,7 +68,7 @@
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-wide text-white">YOLOFIN</h1>
-            <p class="text-xs text-indigo-200 dark:text-slate-400">Expense Tracker & Investment Suite</p>
+            <p class="text-xs text-indigo-200 dark:text-slate-400">Cloud Powered by Supabase</p>
           </div>
         </div>
         
@@ -47,20 +82,22 @@
             </button>
           </nav>
 
-          <!-- Dark/Light Mode Toggle -->
           <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-indigo-700/60 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 hover:text-white transition" title="Toggle Theme">
             <i id="theme-icon" class="fa-solid fa-moon"></i>
           </button>
+
+          <div class="flex items-center gap-2 pl-2 border-l border-indigo-500/30 dark:border-slate-700">
+            <span id="user-display-email" class="text-xs font-semibold text-indigo-100 dark:text-slate-300 hidden sm:inline"></span>
+            <button onclick="logout()" class="p-2.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-xs" title="Logout">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-
-      <!-- VIEW 1: EXPENSE TRACKER -->
       <section id="content-tracker" class="space-y-6">
-        <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Income</p>
@@ -77,7 +114,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Add Transaction Form -->
           <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
             <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
               <i class="fa-solid fa-plus-circle text-indigo-600 dark:text-indigo-400"></i> Add Transaction
@@ -133,7 +169,6 @@
             </form>
           </div>
 
-          <!-- Transactions List & Charts -->
           <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
               <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Expense Breakdown</h2>
@@ -171,9 +206,7 @@
                       <th class="py-2 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <!-- Dynamic rows -->
-                  </tbody>
+                  <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                 </table>
               </div>
             </div>
@@ -181,9 +214,7 @@
         </div>
       </section>
 
-      <!-- VIEW 2: CALCULATORS -->
       <section id="content-calculators" class="hidden space-y-6">
-        <!-- Sub-Tabs -->
         <div class="flex overflow-x-auto gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
           <button onclick="setCalcTab('sip')" class="calc-tab-btn active px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400">SIP Calculator</button>
           <button onclick="setCalcTab('lumpsum')" class="calc-tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Lumpsum Calculator</button>
@@ -193,12 +224,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Controls Panel -->
-          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs">
-            <!-- Dynamic Controls -->
-          </div>
-
-          <!-- Output & Chart Panel -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4" id="calc-inputs"></div>
           <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
@@ -214,29 +240,157 @@
                 <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="res-val-3">₹0</p>
               </div>
             </div>
-
             <div class="h-64 w-full flex justify-center items-center">
               <canvas id="calc-chart"></canvas>
             </div>
           </div>
         </div>
       </section>
-
     </main>
   </div>
 
   <script>
+    // SUPABASE CONFIGURATION (Replace with your actual Project URL and Anon Key)
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let isSignup = false;
+    let currentUser = null;
+    let transactions = [];
     let expenseChartInstance = null;
     let calcChartInstance = null;
     let activeCalc = 'sip';
-    let transactions = JSON.parse(localStorage.getItem('yolofin_transactions')) || [
-      { id: '1', type: 'income', desc: 'Monthly Salary', amount: 85000, category: 'Salary', date: '2026-11-01' },
-      { id: '2', type: 'expense', desc: 'House Rent', amount: 25000, category: 'Housing', date: '2026-11-02' },
-      { id: '3', type: 'expense', desc: 'Groceries & Supplies', amount: 8500, category: 'Food', date: '2026-11-04' }
-    ];
 
     document.getElementById('tx-date').valueAsDate = new Date();
-    renderTracker();
+
+    // --- AUTHENTICATION LOGIC ---
+    function toggleAuthMode() {
+      isSignup = !isSignup;
+      document.getElementById('auth-title').innerText = isSignup ? 'Create YOLOFIN Account' : 'Welcome to YOLOFIN';
+      document.getElementById('auth-subtitle').innerText = isSignup ? 'Sign up to store your data on Supabase' : 'Sign in to sync your budget with Supabase';
+      document.getElementById('auth-btn').innerText = isSignup ? 'Sign Up' : 'Sign In';
+      document.getElementById('auth-toggle-text').innerText = isSignup ? 'Already have an account?' : "Don't have an account?";
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const errEl = document.getElementById('auth-error');
+      errEl.classList.add('hidden');
+
+      let res;
+      if (isSignup) {
+        res = await supabaseClient.auth.signUp({ email, password });
+      } else {
+        res = await supabaseClient.auth.signInWithPassword({ email, password });
+      }
+
+      if (res.error) {
+        errEl.innerText = res.error.message;
+        errEl.classList.remove('hidden');
+      } else {
+        if (isSignup && !res.data.session) {
+          alert('Signup successful! Please check your email to confirm your account before logging in.');
+        } else {
+          checkUserSession();
+        }
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      location.reload();
+    }
+
+    async function checkUserSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('user-display-email').innerText = currentUser.email;
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('opacity-0', 'pointer-events-none');
+        fetchTransactions();
+      } else {
+        document.getElementById('auth-modal').classList.remove('hidden');
+      }
+    }
+
+    // --- SUPABASE DATABASE CRUD ---
+    async function fetchTransactions() {
+      const { data, error } = await supabaseClient
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching transactions:', error.message);
+      } else {
+        transactions = data || [];
+        renderTracker();
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('tx-id').value;
+      const type = document.querySelector('input[name="tx-type"]:checked').value;
+      const description = document.getElementById('tx-desc').value;
+      const amount = parseFloat(document.getElementById('tx-amount').value);
+      const category = document.getElementById('tx-category').value;
+      const date = document.getElementById('tx-date').value;
+
+      if (id) {
+        const { error } = await supabaseClient
+          .from('transactions')
+          .update({ type, description, amount, category, date })
+          .eq('id', id);
+
+        if (error) alert('Error updating: ' + error.message);
+      } else {
+        const { error } = await supabaseClient
+          .from('transactions')
+          .insert([{ user_id: currentUser.id, type, description, amount, category, date }]);
+
+        if (error) alert('Error adding: ' + error.message);
+      }
+
+      resetForm();
+      fetchTransactions();
+    }
+
+    async function deleteTx(id) {
+      const { error } = await supabaseClient
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) alert('Error deleting: ' + error.message);
+      else fetchTransactions();
+    }
+
+    function editTx(id) {
+      const tx = transactions.find(t => t.id === id);
+      if (!tx) return;
+      document.getElementById('tx-id').value = tx.id;
+      document.querySelector(`input[name="tx-type"][value="${tx.type}"]`).checked = true;
+      document.getElementById('tx-desc').value = tx.description;
+      document.getElementById('tx-amount').value = tx.amount;
+      document.getElementById('tx-category').value = tx.category;
+      document.getElementById('tx-date').value = tx.date;
+      document.getElementById('btn-save').innerText = 'Update Transaction';
+      document.getElementById('btn-cancel').classList.remove('hidden');
+    }
+
+    function resetForm() {
+      document.getElementById('tx-id').value = '';
+      document.getElementById('tx-form').reset();
+      document.getElementById('tx-date').valueAsDate = new Date();
+      document.getElementById('btn-save').innerText = 'Save Transaction';
+      document.getElementById('btn-cancel').classList.add('hidden');
+    }
 
     // --- DARK MODE LOGIC ---
     function toggleDarkMode() {
@@ -279,58 +433,6 @@
       }
     }
 
-    // --- TRACKER LOGIC ---
-    function saveTransactions() {
-      localStorage.setItem('yolofin_transactions', JSON.stringify(transactions));
-      renderTracker();
-    }
-
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      const id = document.getElementById('tx-id').value;
-      const type = document.querySelector('input[name="tx-type"]:checked').value;
-      const desc = document.getElementById('tx-desc').value;
-      const amount = parseFloat(document.getElementById('tx-amount').value);
-      const category = document.getElementById('tx-category').value;
-      const date = document.getElementById('tx-date').value;
-
-      if (id) {
-        const index = transactions.findIndex(t => t.id === id);
-        if (index !== -1) transactions[index] = { id, type, desc, amount, category, date };
-      } else {
-        transactions.push({ id: Date.now().toString(), type, desc, amount, category, date });
-      }
-
-      resetForm();
-      saveTransactions();
-    }
-
-    function resetForm() {
-      document.getElementById('tx-id').value = '';
-      document.getElementById('tx-form').reset();
-      document.getElementById('tx-date').valueAsDate = new Date();
-      document.getElementById('btn-save').innerText = 'Save Transaction';
-      document.getElementById('btn-cancel').classList.add('hidden');
-    }
-
-    function editTx(id) {
-      const tx = transactions.find(t => t.id === id);
-      if (!tx) return;
-      document.getElementById('tx-id').value = tx.id;
-      document.querySelector(`input[name="tx-type"][value="${tx.type}"]`).checked = true;
-      document.getElementById('tx-desc').value = tx.desc;
-      document.getElementById('tx-amount').value = tx.amount;
-      document.getElementById('tx-category').value = tx.category;
-      document.getElementById('tx-date').value = tx.date;
-      document.getElementById('btn-save').innerText = 'Update Transaction';
-      document.getElementById('btn-cancel').classList.remove('hidden');
-    }
-
-    function deleteTx(id) {
-      transactions = transactions.filter(t => t.id !== id);
-      saveTransactions();
-    }
-
     function renderTracker() {
       const catFilter = document.getElementById('filter-category').value;
       const filtered = transactions.filter(t => catFilter === 'ALL' || t.category === catFilter);
@@ -339,10 +441,10 @@
       const categoryTotals = {};
 
       transactions.forEach(t => {
-        if (t.type === 'income') income += t.amount;
+        if (t.type === 'income') income += parseFloat(t.amount);
         else {
-          expense += t.amount;
-          categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+          expense += parseFloat(t.amount);
+          categoryTotals[t.category] = (categoryTotals[t.category] || 0) + parseFloat(t.amount);
         }
       });
 
@@ -350,7 +452,6 @@
       document.getElementById('total-expenses').innerText = `₹${expense.toLocaleString('en-IN')}`;
       document.getElementById('net-balance').innerText = `₹${(income - expense).toLocaleString('en-IN')}`;
 
-      // Table Render
       const tbody = document.getElementById('tx-table-body');
       tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="5" class="text-center py-4 text-slate-400">No transactions recorded</td></tr>';
       
@@ -359,10 +460,10 @@
         tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition";
         tr.innerHTML = `
           <td class="py-2.5 text-xs text-slate-500 dark:text-slate-400">${t.date}</td>
-          <td class="py-2.5 font-medium text-slate-700 dark:text-slate-200">${t.desc}</td>
+          <td class="py-2.5 font-medium text-slate-700 dark:text-slate-200">${t.description}</td>
           <td class="py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${t.category}</span></td>
           <td class="py-2.5 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${t.type === 'income' ? '+' : '-'}₹${t.amount.toLocaleString('en-IN')}
+            ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toLocaleString('en-IN')}
           </td>
           <td class="py-2.5 text-center">
             <button onclick="editTx('${t.id}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 mr-2"><i class="fa-solid fa-pen"></i></button>
@@ -372,7 +473,6 @@
         tbody.appendChild(tr);
       });
 
-      // Chart Render
       const isDark = document.documentElement.classList.contains('dark');
       const ctx = document.getElementById('expense-chart').getContext('2d');
       if (expenseChartInstance) expenseChartInstance.destroy();
@@ -554,7 +654,6 @@
       document.getElementById('res-val-2').innerText = `₹${Math.round(returns).toLocaleString('en-IN')}`;
       document.getElementById('res-val-3').innerText = `₹${Math.round(activeCalc === 'swp' ? (total - returns) : total).toLocaleString('en-IN')}`;
 
-      // Update Pie Chart
       const isDark = document.documentElement.classList.contains('dark');
       const ctx = document.getElementById('calc-chart').getContext('2d');
       if (calcChartInstance) calcChartInstance.destroy();
@@ -578,6 +677,9 @@
         }
       });
     }
+
+    // Initialize Session Check on Load
+    checkUserSession();
   </script>
 </body>
 </html>
