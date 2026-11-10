@@ -120,7 +120,7 @@
         <p class="text-xs text-adaptive-muted">Smart Household Expense & Investment Suite</p>
       </div>
 
-      <!-- MAIN NAVIGATION & THEME CONTROLS -->
+      <!-- NAVIGATION & CONTROLS -->
       <div class="flex items-center gap-3">
         <nav class="flex gap-1 bg-purple-950/40 p-1 rounded-xl border border-purple-500/20">
           <button onclick="setActiveView('dashboard')" id="nav-btn-dashboard" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 text-white transition">
@@ -282,19 +282,19 @@
           <div class="space-y-4">
             <div>
               <label id="calc-input1-label" class="block text-xs font-medium text-adaptive-muted mb-1">Monthly Investment (₹)</label>
-              <input type="number" id="calc-input1" value="5000" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
+              <input type="number" id="calc-input1" value="5000" oninput="calculateInvestment()" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
             </div>
             <div id="calc-input2-container">
               <label id="calc-input2-label" class="block text-xs font-medium text-adaptive-muted mb-1">Expected Return Rate (% p.a)</label>
-              <input type="number" step="0.1" id="calc-rate" value="12" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
+              <input type="number" step="0.1" id="calc-rate" value="12" oninput="calculateInvestment()" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
             </div>
             <div>
               <label class="block text-xs font-medium text-adaptive-muted mb-1">Time Horizon (Years)</label>
-              <input type="number" id="calc-years" value="10" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
+              <input type="number" id="calc-years" value="10" oninput="calculateInvestment()" class="w-full px-4 py-2.5 rounded-xl glass-input text-sm">
             </div>
 
             <button onclick="calculateInvestment()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition">
-              Calculate Investment Projection
+              Recalculate Projection
             </button>
           </div>
 
@@ -310,45 +310,51 @@
       </div>
     </div>
 
-    <!-- VIEW 3: MUTUAL FUNDS TRACKER TAB (GROWW + AMFI HYBRID) -->
+    <!-- VIEW 3: MUTUAL FUNDS TRACKER TAB WITH INSTANT RECOMMENDATIONS -->
     <div id="view-mfs" class="hidden space-y-8">
       <div class="glass-card p-6 md:p-8 rounded-2xl space-y-6">
         <div>
           <h2 class="text-2xl font-bold text-adaptive-title">Mutual Fund Market Engine</h2>
-          <p class="text-xs text-adaptive-muted mt-1">Live mutual fund search and historical NAV tracking across Groww & AMFI master feeds</p>
+          <p class="text-xs text-adaptive-muted mt-1">Real-time debounced auto-suggest with dual Groww & AMFI execution</p>
         </div>
 
         <div class="space-y-3 relative">
-          <div class="flex gap-2">
-            <input type="text" id="mf-search-input" onkeyup="handleGrowwSearchKey(event)" class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="Search funds (e.g., Nippon, Parag Parikh, Axis, Quant)...">
-            <button onclick="searchGrowwFunds()" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs rounded-xl shadow-md transition">
-              Search
-            </button>
+          <div class="relative">
+            <input type="text" id="mf-search-input" oninput="handleMfDebouncedInput(event)" autocomplete="off" class="w-full px-4 py-3 rounded-xl glass-input text-sm" placeholder="Start typing fund name (e.g., Nippon, Parag Parikh, Axis, Small Cap)...">
+            <div id="mf-search-spinner" class="hidden absolute right-3 top-3.5">
+              <svg class="animate-spin h-4 w-4 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
           </div>
 
-          <div class="flex flex-wrap gap-2 items-center text-xs">
+          <!-- AUTO-COMPLETE RECOMMENDATIONS DROPDOWN -->
+          <div id="mf-results-container" class="hidden absolute left-0 right-0 top-12 z-20 glass-card p-2 rounded-xl border border-purple-500/40 max-h-64 overflow-y-auto space-y-1 shadow-2xl divide-y divide-purple-950/40">
+            <!-- Dynamic Auto-Suggest Recommendations -->
+          </div>
+
+          <!-- QUICK PICK RECOMMENDATION CHIPS -->
+          <div class="flex flex-wrap gap-2 items-center text-xs pt-1">
             <span class="text-adaptive-muted font-medium">Quick Pick:</span>
-            <button onclick="loadGrowwFundDetails('nippon-india-small-cap-fund-direct-growth')" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300">Nippon Small Cap</button>
-            <button onclick="loadGrowwFundDetails('parag-parikh-long-term-equity-fund-direct-growth')" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300">Parag Parikh Flexi Cap</button>
-            <button onclick="loadGrowwFundDetails('quant-small-cap-fund-direct-plan-growth')" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300">Quant Small Cap</button>
-            <button onclick="loadGrowwFundDetails('axis-bluechip-fund-direct-growth')" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300">Axis Bluechip Direct</button>
+            <button onclick="loadFundDetails('nippon-india-small-cap-fund-direct-growth', 125497)" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300 transition">Nippon Small Cap</button>
+            <button onclick="loadFundDetails('parag-parikh-long-term-equity-fund-direct-growth', 122639)" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300 transition">Parag Parikh Flexi Cap</button>
+            <button onclick="loadFundDetails('quant-small-cap-fund-direct-plan-growth', 120844)" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300 transition">Quant Small Cap</button>
+            <button onclick="loadFundDetails('axis-bluechip-fund-direct-growth', 120503)" class="px-2.5 py-1 rounded-lg bg-purple-950/40 border border-purple-500/20 hover:border-purple-400 text-purple-300 transition">Axis Bluechip Direct</button>
           </div>
         </div>
 
-        <div id="mf-results-container" class="hidden glass-card p-4 rounded-xl border border-purple-500/30 max-h-48 overflow-y-auto space-y-1 divide-y divide-purple-950">
-          <!-- Dynamic Search Results -->
-        </div>
-
+        <!-- SCHEME METRICS & NAV CHART -->
         <div id="mf-details-container" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-purple-800/40">
           <div class="glass-card p-6 rounded-xl space-y-4">
             <div>
               <span id="mf-scheme-category" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/30 font-semibold">Mutual Fund</span>
               <h3 id="mf-scheme-name" class="text-base font-bold text-adaptive-title mt-2">Scheme Name</h3>
-              <p id="mf-scheme-code" class="text-xs text-adaptive-muted">Scheme ID: -----</p>
+              <p id="mf-scheme-code" class="text-xs text-adaptive-muted">Scheme Identifier: -----</p>
             </div>
 
             <div class="bg-purple-950/30 p-4 rounded-xl border border-purple-500/20 space-y-2">
-              <span class="text-xs text-adaptive-muted block">Current NAV</span>
+              <span class="text-xs text-adaptive-muted block">Current Net Asset Value (NAV)</span>
               <div class="flex items-baseline gap-2">
                 <span id="mf-nav-price" class="text-2xl font-extrabold text-green-400">₹0.00</span>
                 <span id="mf-nav-date" class="text-[10px] text-adaptive-muted">Live Feed</span>
@@ -363,8 +369,8 @@
 
           <div class="glass-card p-6 rounded-xl lg:col-span-2 space-y-4">
             <div class="flex justify-between items-center">
-              <h4 class="text-sm font-bold text-adaptive-title">NAV History Chart</h4>
-              <span class="text-xs text-adaptive-muted">Data feed active</span>
+              <h4 class="text-sm font-bold text-adaptive-title">Historical NAV Performance</h4>
+              <span class="text-xs text-adaptive-muted">Instant Cached Feed</span>
             </div>
             <div class="w-full h-56">
               <canvas id="mfChart"></canvas>
@@ -382,6 +388,9 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_q2BHVLYSqEuoZ3WQdwp1sw__bjUkmwh';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // IN-MEMORY RESPONSE CACHE FOR LIGHTNING-FAST RETRIEVALS
+    const apiCache = new Map();
+
     let isSignup = false;
     let currentUser = null;
     let transactions = [];
@@ -390,10 +399,20 @@
     let activeCalc = 'sip';
     let activeSheetMode = 'monthly';
     let currentTheme = 'dark';
+    let debounceTimer = null;
 
     const today = new Date();
     document.getElementById('tx-date').valueAsDate = today;
     document.getElementById('sheet-month-filter').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+    // CLOSE SEARCH DROPDOWN ON OUTSIDE CLICK
+    document.addEventListener('click', (e) => {
+      const searchBox = document.getElementById('mf-search-input');
+      const resultsContainer = document.getElementById('mf-results-container');
+      if (!searchBox.contains(e.target) && !resultsContainer.contains(e.target)) {
+        resultsContainer.classList.add('hidden');
+      }
+    });
 
     function toggleTheme() {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -428,7 +447,7 @@
       } else if (view === 'mfs') {
         mfsView.classList.remove('hidden');
         mfsBtn.className = 'px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 text-white transition';
-        if (!mfChartInstance) loadGrowwFundDetails('nippon-india-small-cap-fund-direct-growth');
+        if (!mfChartInstance) loadFundDetails('nippon-india-small-cap-fund-direct-growth', 125497);
       }
     }
 
@@ -581,9 +600,9 @@
         else expense += t.amount;
       });
 
-      document.getElementById('total-income').innerText = `₹${income.toFixed(2)}`;
-      document.getElementById('total-expense').innerText = `₹${expense.toFixed(2)}`;
-      document.getElementById('net-balance').innerText = `₹${(income - expense).toFixed(2)}`;
+      document.getElementById('total-income').innerText = `₹${income.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('total-expense').innerText = `₹${expense.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('net-balance').innerText = `₹${(income - expense).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
       renderChart(getCategoryTotals());
       renderSheets();
@@ -612,7 +631,7 @@
             <td class="p-3 font-medium">${t.description}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-700/30 text-[10px]">${t.category}</span></td>
             <td class="p-3"><span class="${t.type === 'income' ? 'text-green-400' : 'text-red-400'} font-semibold capitalize">${t.type}</span></td>
-            <td class="p-3 text-right font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}">₹${t.amount.toFixed(2)}</td>
+            <td class="p-3 text-right font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}">₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
             <td class="p-3 text-center">
               <button onclick="deleteTransaction('${t.id}')" class="text-red-400 hover:text-red-300 text-xs">🗑️</button>
             </td>
@@ -646,8 +665,8 @@
             <td class="p-3 font-bold text-purple-300">${year}</td>
             <td class="p-3 font-medium">${d.count} Total Entries</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-indigo-900/30 text-indigo-300 border border-indigo-700/30 text-[10px]">Annual Summary</span></td>
-            <td class="p-3"><span class="text-adaptive-muted font-semibold">Net: ₹${net.toFixed(2)}</span></td>
-            <td class="p-3 text-right font-bold text-red-400">Total Expense: ₹${d.expense.toFixed(2)}</td>
+            <td class="p-3"><span class="text-adaptive-muted font-semibold">Net: ₹${net.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></td>
+            <td class="p-3 text-right font-bold text-red-400">Total Expense: ₹${d.expense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -747,17 +766,9 @@
         const i = r / 12;
         const months = n * 12;
         invested = p * months;
-        total = p * ((Math.pow(1 + i, months) - 1) / i) * (1 + i);
+        total = months > 0 && i > 0 ? p * ((Math.pow(1 + i, months) - 1) / i) * (1 + i) : invested;
         returns = total - invested;
-      } else if (activeCalc === 'lumpsum' || activeCalc === 'mf') {
-        invested = p;
-        total = p * Math.pow(1 + r, n);
-        returns = total - invested;
-      } else if (activeCalc === 'stp') {
-        invested = p;
-        total = p * Math.pow(1 + r, n);
-        returns = total - invested;
-      } else if (activeCalc === 'swp') {
+      } else if (activeCalc === 'lumpsum' || activeCalc === 'mf' || activeCalc === 'stp' || activeCalc === 'swp') {
         invested = p;
         total = p * Math.pow(1 + r, n);
         returns = total - invested;
@@ -772,118 +783,130 @@
       document.getElementById('res-total').innerText = `₹${Math.round(total).toLocaleString('en-IN')}`;
     }
 
-    // --- GROWW & AMFI HYBRID MF ENGINE ---
-    function handleGrowwSearchKey(e) {
-      if (e.key === 'Enter') searchGrowwFunds();
-    }
-
-    async function searchGrowwFunds() {
-      const query = document.getElementById('mf-search-input').value.trim();
+    // --- HIGH-SPEED DEBOUNCED SEARCH & AUTO-SUGGEST ENGINE ---
+    function handleMfDebouncedInput(e) {
+      clearTimeout(debounceTimer);
+      const query = e.target.value.trim();
       const resultsContainer = document.getElementById('mf-results-container');
+      const spinner = document.getElementById('mf-search-spinner');
 
-      if (!query) return;
-
-      resultsContainer.innerHTML = '<div class="p-3 text-center text-adaptive-muted text-xs">Searching mutual fund index...</div>';
-      resultsContainer.classList.remove('hidden');
-
-      const growwSearchUrl = `https://groww.in/v1/api/search/v1/entity?app=false&query=${encodeURIComponent(query)}&page=0&size=10`;
-      const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(growwSearchUrl)}`;
-
-      try {
-        const response = await fetch(proxiedUrl);
-        const proxyData = await response.json();
-        const data = JSON.parse(proxyData.contents);
-        const results = data.content || [];
-
-        resultsContainer.innerHTML = '';
-
-        if (!results.length) {
-          fallbackAmfiSearch(query);
-          return;
-        }
-
-        results.forEach(item => {
-          if (item.entity_type === 'MUTUAL_FUND' || item.search_id) {
-            const div = document.createElement('div');
-            div.className = 'p-2.5 hover:bg-purple-900/30 rounded-lg cursor-pointer flex justify-between items-center transition';
-            div.onclick = () => {
-              resultsContainer.classList.add('hidden');
-              loadGrowwFundDetails(item.search_id || item.id);
-            };
-            div.innerHTML = `
-              <span class="text-xs font-medium text-adaptive-title">${item.title || item.name}</span>
-              <span class="text-[10px] text-adaptive-muted font-mono bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20">${item.sub_type || 'Mutual Fund'}</span>
-            `;
-            resultsContainer.appendChild(div);
-          }
-        });
-      } catch (err) {
-        fallbackAmfiSearch(query);
+      if (query.length < 2) {
+        resultsContainer.classList.add('hidden');
+        spinner.classList.add('hidden');
+        return;
       }
+
+      spinner.classList.remove('hidden');
+
+      debounceTimer = setTimeout(() => {
+        executeInstantMfSearch(query);
+      }, 250);
     }
 
-    async function fallbackAmfiSearch(query) {
+    async function executeInstantMfSearch(query) {
       const resultsContainer = document.getElementById('mf-results-container');
+      const spinner = document.getElementById('mf-search-spinner');
+      const cacheKey = `search_${query.toLowerCase()}`;
+
+      // Check cache first for 0ms latency
+      if (apiCache.has(cacheKey)) {
+        renderSearchRecommendations(apiCache.get(cacheKey));
+        spinner.classList.add('hidden');
+        return;
+      }
+
       try {
+        // Fast direct AMFI search endpoint (zero CORS issues)
         const response = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`);
         const results = await response.json();
-        resultsContainer.innerHTML = '';
-
-        if (!results.length) {
-          resultsContainer.innerHTML = '<div class="p-3 text-center text-adaptive-muted text-xs">No matching schemes found.</div>';
-          return;
-        }
-
-        results.slice(0, 10).forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'p-2.5 hover:bg-purple-900/30 rounded-lg cursor-pointer flex justify-between items-center transition';
-          div.onclick = () => {
-            resultsContainer.classList.add('hidden');
-            loadAmfiDetails(item.schemeCode);
-          };
-          div.innerHTML = `
-            <span class="text-xs font-medium text-adaptive-title">${item.schemeName}</span>
-            <span class="text-[10px] text-adaptive-muted font-mono bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20">AMFI: ${item.schemeCode}</span>
-          `;
-          resultsContainer.appendChild(div);
-        });
-      } catch (e) {
-        resultsContainer.innerHTML = '<div class="p-3 text-center text-red-400 text-xs">Search service unavailable. Please check your network connection.</div>';
+        
+        apiCache.set(cacheKey, results);
+        renderSearchRecommendations(results);
+      } catch (err) {
+        resultsContainer.innerHTML = '<div class="p-3 text-center text-red-400 text-xs">Search connection error.</div>';
+        resultsContainer.classList.remove('hidden');
+      } finally {
+        spinner.classList.add('hidden');
       }
     }
 
-    async function loadGrowwFundDetails(searchId) {
+    function renderSearchRecommendations(results) {
+      const resultsContainer = document.getElementById('mf-results-container');
+      resultsContainer.innerHTML = '';
+
+      if (!results || !results.length) {
+        resultsContainer.innerHTML = '<div class="p-3 text-center text-adaptive-muted text-xs">No matching schemes found.</div>';
+        resultsContainer.classList.remove('hidden');
+        return;
+      }
+
+      results.slice(0, 10).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'p-2.5 hover:bg-purple-900/30 rounded-lg cursor-pointer flex justify-between items-center transition';
+        div.onclick = () => {
+          resultsContainer.classList.add('hidden');
+          document.getElementById('mf-search-input').value = item.schemeName;
+          loadAmfiDetails(item.schemeCode);
+        };
+        div.innerHTML = `
+          <span class="text-xs font-medium text-adaptive-title line-clamp-1">${item.schemeName}</span>
+          <span class="text-[10px] text-adaptive-muted font-mono bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20 whitespace-nowrap ml-2">Code: ${item.schemeCode}</span>
+        `;
+        resultsContainer.appendChild(div);
+      });
+
+      resultsContainer.classList.remove('hidden');
+    }
+
+    async function loadFundDetails(growwSearchId, fallbackAmfiCode) {
       const detailsContainer = document.getElementById('mf-details-container');
       detailsContainer.classList.remove('hidden');
 
-      document.getElementById('mf-scheme-name').innerText = 'Loading fund metrics...';
+      document.getElementById('mf-scheme-name').innerText = 'Loading metrics...';
       document.getElementById('mf-nav-price').innerText = '₹--.--';
 
-      const growwDetailsUrl = `https://groww.in/v1/api/data/mf/web/v1/scheme/search/${searchId}`;
-      const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(growwDetailsUrl)}`;
+      const cacheKey = `fund_${growwSearchId}`;
+      if (apiCache.has(cacheKey)) {
+        applyFundDataToUI(apiCache.get(cacheKey));
+        return;
+      }
+
+      // Try fetching Groww proxied scheme metrics, fall back cleanly to AMFI
+      const growwUrl = `https://groww.in/v1/api/data/mf/web/v1/scheme/search/${growwSearchId}`;
+      const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(growwUrl)}`;
 
       try {
         const response = await fetch(proxiedUrl);
         const proxyData = await response.json();
         const data = JSON.parse(proxyData.contents);
 
-        const schemeName = data.scheme_name || data.name || searchId.replace(/-/g, ' ').toUpperCase();
-        const nav = data.nav || (data.nav_history && data.nav_history.length ? data.nav_history[0].nav : 0);
-        const category = data.category || data.fund_type || 'Equity / Hybrid';
-        const risk = data.risk_rating || data.riskometer || 'Moderate to High';
-
-        document.getElementById('mf-scheme-name').innerText = schemeName;
-        document.getElementById('mf-scheme-category').innerText = data.fund_house || 'Direct Growth Fund';
-        document.getElementById('mf-scheme-code').innerText = `Search ID: ${searchId}`;
-        document.getElementById('mf-nav-price').innerText = `₹${parseFloat(nav).toFixed(2)}`;
-        document.getElementById('groww-fund-cat').innerText = category;
-        document.getElementById('groww-fund-risk').innerText = risk;
-
-        if (data.nav_history && data.nav_history.length) {
-          renderMfChart(data.nav_history.slice(0, 90).reverse());
+        if (data && data.scheme_name) {
+          apiCache.set(cacheKey, data);
+          applyFundDataToUI(data);
+          return;
         }
-      } catch (err) {
-        document.getElementById('mf-scheme-name').innerText = searchId.replace(/-/g, ' ').toUpperCase();
+      } catch (e) {
+        // Fallback to AMFI master feed
+      }
+
+      loadAmfiDetails(fallbackAmfiCode);
+    }
+
+    function applyFundDataToUI(data) {
+      const schemeName = data.scheme_name || data.name || 'Mutual Fund Scheme';
+      const nav = data.nav || (data.nav_history && data.nav_history.length ? data.nav_history[0].nav : 0);
+      const category = data.category || data.fund_type || 'Equity / Growth';
+      const risk = data.risk_rating || data.riskometer || 'Moderate';
+
+      document.getElementById('mf-scheme-name').innerText = schemeName;
+      document.getElementById('mf-scheme-category').innerText = data.fund_house || 'Direct Scheme';
+      document.getElementById('mf-scheme-code').innerText = `Fund ID: ${data.search_id || data.scheme_code || 'N/A'}`;
+      document.getElementById('mf-nav-price').innerText = `₹${parseFloat(nav).toFixed(2)}`;
+      document.getElementById('groww-fund-cat').innerText = category;
+      document.getElementById('groww-fund-risk').innerText = risk;
+
+      if (data.nav_history && data.nav_history.length) {
+        renderMfChart(data.nav_history.slice(0, 90).reverse());
       }
     }
 
@@ -891,25 +914,39 @@
       const detailsContainer = document.getElementById('mf-details-container');
       detailsContainer.classList.remove('hidden');
 
+      const cacheKey = `amfi_${schemeCode}`;
+      if (apiCache.has(cacheKey)) {
+        const data = apiCache.get(cacheKey);
+        renderAmfiDataUI(data);
+        return;
+      }
+
       try {
         const response = await fetch(`https://api.mfapi.in/mf/${schemeCode}`);
         const data = await response.json();
 
-        const meta = data.meta;
-        const navHistory = data.data;
-        const latest = navHistory[0];
-
-        document.getElementById('mf-scheme-name').innerText = meta.scheme_name;
-        document.getElementById('mf-scheme-category').innerText = meta.fund_house || 'AMFI Direct Scheme';
-        document.getElementById('mf-scheme-code').innerText = `Scheme Code: ${meta.scheme_code}`;
-        document.getElementById('mf-nav-price').innerText = `₹${parseFloat(latest.nav).toFixed(2)}`;
-        document.getElementById('groww-fund-cat').innerText = meta.scheme_category || 'Mutual Fund';
-        document.getElementById('groww-fund-risk').innerText = 'Standard Risk';
-
-        renderMfChart(navHistory.slice(0, 90).reverse());
+        if (data.status === 'SUCCESS') {
+          apiCache.set(cacheKey, data);
+          renderAmfiDataUI(data);
+        }
       } catch (err) {
         alert('Failed to load scheme details.');
       }
+    }
+
+    function renderAmfiDataUI(data) {
+      const meta = data.meta;
+      const navHistory = data.data;
+      const latest = navHistory[0];
+
+      document.getElementById('mf-scheme-name').innerText = meta.scheme_name;
+      document.getElementById('mf-scheme-category').innerText = meta.fund_house || 'AMFI Direct Scheme';
+      document.getElementById('mf-scheme-code').innerText = `AMFI Code: ${meta.scheme_code}`;
+      document.getElementById('mf-nav-price').innerText = `₹${parseFloat(latest.nav).toFixed(2)}`;
+      document.getElementById('groww-fund-cat').innerText = meta.scheme_category || 'Mutual Fund';
+      document.getElementById('groww-fund-risk').innerText = 'Standard Market Risk';
+
+      renderMfChart(navHistory.slice(0, 90).reverse());
     }
 
     function renderMfChart(navData) {
